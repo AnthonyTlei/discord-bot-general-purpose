@@ -12,8 +12,6 @@ const credentials = Buffer.from(
   `${spotifyClientId}:${spotifyClientSecret}`
 ).toString("base64");
 
-const fs = require("fs");
-
 async function getSpotifyAccessToken() {
   try {
     const response = await axios.post(
@@ -71,17 +69,11 @@ module.exports = {
           guildId: interaction.guildId,
           adapterCreator: interaction.guild.voiceAdapterCreator,
         });
-        // const accessToken = await getSpotifyAccessToken();
-        // const trackId = link.split("/").pop();
-        // const trackInfo = await getSpotifyTrackInfo(trackId, accessToken);
-        // console.log(`Preview URL: ${trackInfo.preview_url}`);
+        const accessToken = await getSpotifyAccessToken();
+        const trackId = link.split("/").pop();
+        const trackInfo = await getSpotifyTrackInfo(trackId, accessToken);
         const player = createAudioPlayer();
-        // const resource = createAudioResource(trackInfo.preview_url);
-        const resource = createAudioResource(
-          fs.createReadStream(
-            "/home/tleiji/dev/system-discord-bot/assets/song.mp3"
-          )
-        );
+        const resource = createAudioResource(trackInfo.preview_url);
         player.play(resource);
         player.on(AudioPlayerStatus.Playing, () => {
           console.log('The audio player has started playing!');
