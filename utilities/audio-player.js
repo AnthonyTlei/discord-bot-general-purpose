@@ -9,6 +9,8 @@ if (player) {
 player = createAudioPlayer();
 player.on('error', (error) => {
 	console.error('Error in audio player:', error);
+	player.stop();
+	// TODO : Play next song in queue if exists
 });
 
 module.exports = {
