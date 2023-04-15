@@ -3,5 +3,6 @@
     "clientId": "your-application-id-goes-here",
 	"guildId": "your-server-id-goes-here",
     "spotifyClientId": "your-spotify-client-id-goes-here",
-    "spotifyClientSecret": "your-spotify-client-secret-goes-here"
+    "spotifyClientSecret": "your-spotify-client-secret-goes-here",
+    "youtubeAPIKey": "your-youtube-api-key-goes-here"
 }
