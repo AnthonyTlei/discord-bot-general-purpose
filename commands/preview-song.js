@@ -29,7 +29,7 @@ const getSpotifyAccessToken = async () => {
 		console.error('Error getting Spotify access token:', error);
 		return null;
 	}
-}
+};
 
 const getSpotifyTrackInfo = async (trackId, accessToken) => {
 	try {
@@ -47,11 +47,11 @@ const getSpotifyTrackInfo = async (trackId, accessToken) => {
 		console.error('Error getting Spotify track info:', error);
 		return null;
 	}
-}
+};
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('play-song')
+		.setName('preview-song')
 		.setDescription('Plays a preview of a Spotify track.')
 		.addStringOption((option) =>
 			option
