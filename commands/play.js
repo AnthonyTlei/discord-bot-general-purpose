@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { joinVoiceChannel, createAudioPlayer, createAudioResource } = require('@discordjs/voice');
+const { joinVoiceChannel, createAudioResource } = require('@discordjs/voice');
+const { player } = require('../utilities/audio-player.js');
 const { youtubeAPIKey } = require('../config.json');
 const ytdl = require('ytdl-core-discord');
 const { google } = require('googleapis');
@@ -33,7 +34,7 @@ module.exports = {
 			option
 				.setName('query')
 				.setDescription('The query to search for.')
-				.setRequired(true)
+				.setRequired(false)
 				.setMaxLength(2000),
 		),
 	async execute(interaction) {
@@ -52,6 +53,11 @@ module.exports = {
 					guildId: interaction.guildId,
 					adapterCreator: interaction.guild.voiceAdapterCreator,
 				});
+				// TODO : Check if player is already playing, then q the song
+				if (player.state.status === 'playing') {
+					await interaction.editReply('Player is already playing.');
+					return;
+				}
 				const video = await getYouTubeVideoInfo(query);
 				if (!video) {
 					await interaction.editReply('Song not found.');
@@ -59,18 +65,22 @@ module.exports = {
 				}
 				const url = `https://www.youtube.com/watch?v=${video.id.videoId}`;
 				const stream = await ytdl(url, { filter: 'audioonly' });
-				const player = createAudioPlayer();
 				const resource = createAudioResource(stream);
 				player.play(resource);
 				connection.subscribe(player);
 				await interaction.editReply('Playing: ' + video.snippet.title);
 			}
+			else {
+				if (player.state.status === 'paused') {
+					player.unpause();
+					await interaction.editReply('Player resumed.');
+					return;
+				}
+				await interaction.editReply('Player is already running.');
+			}
 		}
 		catch (error) {
 			console.error('Error executing play command:', error);
-			await interaction.editReply(
-				'An error occurred while trying to play the song.',
-			);
 		}
 	},
 };

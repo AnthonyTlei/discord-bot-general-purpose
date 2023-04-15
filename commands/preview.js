@@ -51,7 +51,7 @@ const getSpotifyTrackInfo = async (trackId, accessToken) => {
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('preview-song')
+		.setName('preview')
 		.setDescription('Plays a preview of a Spotify track.')
 		.addStringOption((option) =>
 			option
@@ -90,9 +90,6 @@ module.exports = {
 		}
 		catch (error) {
 			console.error('Error executing play-song command:', error);
-			await interaction.editReply(
-				'An error occurred while trying to play the song.',
-			);
 		}
 	},
 };
