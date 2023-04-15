@@ -11,7 +11,7 @@ const credentials = Buffer.from(
 	`${spotifyClientId}:${spotifyClientSecret}`,
 ).toString('base64');
 
-async function getSpotifyAccessToken() {
+const getSpotifyAccessToken = async () => {
 	try {
 		const response = await axios.post(
 			'https://accounts.spotify.com/api/token',
@@ -31,7 +31,7 @@ async function getSpotifyAccessToken() {
 	}
 }
 
-async function getSpotifyTrackInfo(trackId, accessToken) {
+const getSpotifyTrackInfo = async (trackId, accessToken) => {
 	try {
 		const response = await axios.get(
 			`https://api.spotify.com/v1/tracks/${trackId}`,
