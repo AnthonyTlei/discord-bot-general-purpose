@@ -76,6 +76,7 @@ module.exports = {
 					await interaction.editReply('Player resumed.');
 					return;
 				}
+				// TODO : Check if player is even connected
 				await interaction.editReply('Player is already running.');
 			}
 		}
