@@ -78,11 +78,7 @@ module.exports = {
 				await manager.on(AudioManagerEvents.ERROR, (error) => {
 					console.error('Error in AudioManager:', error);
 					// TODO: Make the message more descriptive. And display it last?
-<<<<<<< HEAD
-					interaction.editReply('Error playing song. Moving to next one.');
-=======
 					interaction.editReply('Error playing song. Moving to next song.');
->>>>>>> 62770f3e81a61e12c8927122791c03d32910de30
 				});
 			}
 		}
