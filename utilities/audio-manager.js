@@ -1,6 +1,7 @@
 const { createAudioPlayer, AudioPlayerStatus } = require('@discordjs/voice');
-const Queue = require('./queue.js');
+const { EventEmitter } = require('events');
 const { Song } = require('./song.js');
+const Queue = require('./queue.js');
 
 // TODO : removeFromQueue?
 // TODO : clearQueue?
@@ -13,8 +14,13 @@ const { Song } = require('./song.js');
 // TODO : Implent /queue command.
 // TODO : Add unique ID to every song in queue so user can remove specific song from queue.
 
-class AudioManager {
+const AudioManagerEvents = {
+	ERROR: 'error',
+};
+
+class AudioManager extends EventEmitter {
 	constructor() {
+		super();
 		if (AudioManager.instance) {
 			return AudioManager.instance;
 		}
@@ -26,8 +32,7 @@ class AudioManager {
 			this._playNextSong();
 		});
 		this.m_player.on('error', (error) => {
-			// TODO : Emit signal to send message to user?
-			console.error('Error in AudioManager:', error);
+			this.emit(AudioManagerEvents.ERROR, error);
 			this._playNextSong();
 		});
 	}
@@ -105,4 +110,7 @@ class AudioManager {
 	}
 }
 
-module.exports = AudioManager;
+module.exports = {
+	AudioManager,
+	AudioManagerEvents,
+};

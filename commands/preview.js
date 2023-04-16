@@ -10,7 +10,7 @@ const credentials = Buffer.from(
 	`${spotifyClientId}:${spotifyClientSecret}`,
 ).toString('base64');
 
-const AudioManager = require('../utilities/audio-manager.js');
+const { AudioManager } = require('../utilities/audio-manager.js');
 const { SongType, Song } = require('../utilities/song.js');
 
 const manager = new AudioManager();
