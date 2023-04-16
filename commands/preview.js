@@ -11,7 +11,7 @@ const credentials = Buffer.from(
 ).toString('base64');
 
 const AudioManager = require('../utilities/audio-manager.js');
-const Song = require('../utilities/song.js');
+const { SongType, Song } = require('../utilities/song.js');
 
 const manager = new AudioManager();
 
@@ -85,12 +85,15 @@ module.exports = {
 				const accessToken = await getSpotifyAccessToken();
 				const trackId = link.split('/').pop();
 				const trackInfo = await getSpotifyTrackInfo(trackId, accessToken);
+				const title = trackInfo.name;
+				const artist = trackInfo.artists[0].name;
+				const type = SongType.SPOTIFY;
 				if (!trackInfo.preview_url) {
 					await interaction.editReply('No preview available for this song.');
 					return;
 				}
 				const resource = createAudioResource(trackInfo.preview_url);
-				const song = new Song(resource);
+				const song = new Song(resource, title, artist, type);
 				await manager.play(song, (reply) => interaction.editReply(reply));
 				connection.subscribe(manager.player);
 			}

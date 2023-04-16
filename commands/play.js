@@ -5,7 +5,7 @@ const { google } = require('googleapis');
 const ytdl = require('ytdl-core-discord');
 
 const AudioManager = require('../utilities/audio-manager.js');
-const Song = require('../utilities/song.js');
+const { SongType, Song } = require('../utilities/song.js');
 
 const manager = new AudioManager();
 
@@ -66,13 +66,15 @@ module.exports = {
 					await interaction.editReply('Song not found.');
 					return;
 				}
+				const title = video.snippet.title;
+				const artist = video.snippet.channelTitle;
+				const type = SongType.YOUTUBE;
 				const url = `https://www.youtube.com/watch?v=${video.id.videoId}`;
 				const stream = await ytdl(url, { filter: 'audioonly' });
 				const resource = createAudioResource(stream);
-				const song = new Song(resource);
-				manager.addToQueue(song);
+				const song = new Song(resource, title, artist, type);
+				await manager.play(song, (reply) => interaction.editReply(reply));
 				connection.subscribe(manager.player);
-				await interaction.editReply('Playing: ' + video.snippet.title);
 			}
 		}
 		catch (error) {

@@ -1,6 +1,6 @@
 const { createAudioPlayer, AudioPlayerStatus } = require('@discordjs/voice');
 const Queue = require('./queue.js');
-const Song = require('./song.js');
+const { Song } = require('./song.js');
 
 // TODO : removeFromQueue?
 // TODO : clearQueue?
