@@ -4,7 +4,7 @@ const { youtubeAPIKey } = require('../config.json');
 const { google } = require('googleapis');
 const ytdl = require('ytdl-core-discord');
 
-const AudioManager = require('../utilities/audio-manager.js');
+const { AudioManager, AudioManagerEvents} = require('../utilities/audio-manager.js');
 const { SongType, Song } = require('../utilities/song.js');
 
 const manager = new AudioManager();
@@ -75,6 +75,11 @@ module.exports = {
 				const song = new Song(resource, title, artist, type);
 				await manager.play(song, (reply) => interaction.editReply(reply));
 				connection.subscribe(manager.player);
+				await manager.on(AudioManagerEvents.ERROR, (error) => {
+					console.error('Error in AudioManager:', error);
+					// TODO: Make the message more descriptive. And display it last?
+					interaction.editReply('Error playing song. Moving to next one.');
+				});
 			}
 		}
 		catch (error) {
