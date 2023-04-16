@@ -5,8 +5,8 @@ const manager = new AudioManager();
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('pause')
-		.setDescription('Pauses Player.'),
+		.setName('resume')
+		.setDescription('Resumes Player.'),
 	async execute(interaction) {
 		try {
 			await interaction.deferReply();
@@ -16,7 +16,7 @@ module.exports = {
 				);
 				return;
 			}
-			await manager.pause((reply) => interaction.editReply(reply));
+			await manager.resume((reply) => interaction.editReply(reply));
 		}
 		catch (error) {
 			console.error('Error executing play command:', error);

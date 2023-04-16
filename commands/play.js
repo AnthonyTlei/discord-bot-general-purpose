@@ -38,7 +38,7 @@ module.exports = {
 			option
 				.setName('query')
 				.setDescription('The query to search for.')
-				.setRequired(false)
+				.setRequired(true)
 				.setMaxLength(2000),
 		),
 	async execute(interaction) {
@@ -73,10 +73,6 @@ module.exports = {
 				manager.addToQueue(song);
 				connection.subscribe(manager.player);
 				await interaction.editReply('Playing: ' + video.snippet.title);
-			}
-			else {
-				manager.resume();
-				await interaction.editReply('Resuming song.');
 			}
 		}
 		catch (error) {

@@ -1,5 +1,6 @@
 const { createAudioPlayer, AudioPlayerStatus } = require('@discordjs/voice');
 const Queue = require('./queue.js');
+const Song = require('./song.js');
 
 // TODO : removeFromQueue?
 // TODO : clearQueue?
@@ -22,67 +23,74 @@ class AudioManager {
 		AudioManager.instance = this;
 		this.m_player = createAudioPlayer();
 		this.m_queue = new Queue();
+		this.m_current_song = new Song();
 		this.m_player.on(AudioPlayerStatus.Idle, () => {
 			this._playNextSong();
 		});
 	}
 
 	_addToQueue(song) {
-		console.log('_addToQueue()');
-		console.log('	queue size: ' + this.m_queue.length);
 		this.m_queue.enqueue(song);
-		console.log('	new queue size: ' + this.m_queue.length);
 	}
 
 	_playNextSong() {
-		console.log('_playNextSong()');
 		if (this.m_queue.isEmpty) {
-			console.log('	queue empty');
 			this.m_player.stop();
 			return;
 		}
-		console.log('	queue size: ' + this.m_queue.length);
 		const song = this.m_queue.dequeue();
-		console.log('	new queue size: ' + this.m_queue.length);
 		const resource = song.resource;
+		this.m_current_song = song;
 		this.m_player.play(resource);
 	}
 
-	resume() {
+	resume(callback) {
+		let reply = '';
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:
+			reply = 'Nothing is playing.';
 			break;
 		case AudioPlayerStatus.Playing:
+			reply = 'Already playing: ' + this.m_current_song.title;
 			break;
 		case AudioPlayerStatus.Paused:
 			this.m_player.unpause();
+			reply = 'Resumed: ' + this.m_current_song.title;
 			break;
 		case AudioPlayerStatus.Buffering:
+			reply = 'Buffering: ' + this.m_current_song.title;
 			break;
+		}
+		if (callback) {
+			callback(reply);
 		}
 	}
 
-	play(song) {
+	play(song, callback) {
+		let reply = '';
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:
 			this._addToQueue(song);
 			this._playNextSong();
+			reply = 'Playing: ' + this.m_current_song.title;
 			break;
 		case AudioPlayerStatus.Playing:
-			this._addToQueue(song);
-			break;
 		case AudioPlayerStatus.Paused:
-			this._addToQueue(song);
-			this.m_player.unpause();
-			break;
 		case AudioPlayerStatus.Buffering:
 			this._addToQueue(song);
+			reply = 'Added to queue: ' + song.title;
 			break;
+		}
+		if (callback) {
+			callback(reply);
 		}
 	}
 
-	pause() {
+	pause(callback) {
 		this.m_player.pause();
+		if (callback) {
+			callback('Paused: ' + this.m_current_song.title);
+		}
 	}
 
 	set player(player) {

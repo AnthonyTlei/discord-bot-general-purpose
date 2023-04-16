@@ -61,7 +61,7 @@ module.exports = {
 			option
 				.setName('link')
 				.setDescription('The Link of the Spotify track to preview.')
-				.setRequired(false)
+				.setRequired(true)
 				.setMaxLength(2000),
 		),
 	async execute(interaction) {
@@ -91,13 +91,8 @@ module.exports = {
 				}
 				const resource = createAudioResource(trackInfo.preview_url);
 				const song = new Song(resource);
-				manager.play(song);
+				await manager.play(song, (reply) => interaction.editReply(reply));
 				connection.subscribe(manager.player);
-				await interaction.editReply('Playing preview of: ' + trackInfo.name + ' by ' + trackInfo.artists[0].name);
-			}
-			else {
-				manager.resume();
-				await interaction.editReply('Resuming song.');
 			}
 		}
 		catch (error) {
