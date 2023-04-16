@@ -1,9 +1,13 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { joinVoiceChannel, createAudioResource } = require('@discordjs/voice');
-const { player } = require('../utilities/audio-player.js');
 const { youtubeAPIKey } = require('../config.json');
-const ytdl = require('ytdl-core-discord');
 const { google } = require('googleapis');
+const ytdl = require('ytdl-core-discord');
+
+const AudioManager = require('../utilities/audio-manager.js');
+const Song = require('../utilities/song.js');
+
+const manager = new AudioManager();
 
 const youtube = google.youtube({
 	version: 'v3',
@@ -46,18 +50,17 @@ module.exports = {
 				);
 				return;
 			}
+			const connection = joinVoiceChannel({
+				channelId: interaction.member.voice.channelId,
+				guildId: interaction.guildId,
+				adapterCreator: interaction.guild.voiceAdapterCreator,
+			});
+			if (!connection) {
+				await interaction.editReply('Failed to join voice channel.');
+				return;
+			}
 			const query = interaction.options.getString('query');
 			if (query) {
-				const connection = joinVoiceChannel({
-					channelId: interaction.member.voice.channelId,
-					guildId: interaction.guildId,
-					adapterCreator: interaction.guild.voiceAdapterCreator,
-				});
-				// TODO : Check if player is already playing, then q the song
-				if (player.state.status === 'playing') {
-					await interaction.editReply('Player is already playing.');
-					return;
-				}
 				const video = await getYouTubeVideoInfo(query);
 				if (!video) {
 					await interaction.editReply('Song not found.');
@@ -66,18 +69,14 @@ module.exports = {
 				const url = `https://www.youtube.com/watch?v=${video.id.videoId}`;
 				const stream = await ytdl(url, { filter: 'audioonly' });
 				const resource = createAudioResource(stream);
-				player.play(resource);
-				connection.subscribe(player);
+				const song = new Song(resource);
+				manager.addToQueue(song);
+				connection.subscribe(manager.player);
 				await interaction.editReply('Playing: ' + video.snippet.title);
 			}
 			else {
-				if (player.state.status === 'paused') {
-					player.unpause();
-					await interaction.editReply('Player resumed.');
-					return;
-				}
-				// TODO : Check if player is even connected
-				await interaction.editReply('Player is already running.');
+				manager.resume();
+				await interaction.editReply('Resuming song.');
 			}
 		}
 		catch (error) {

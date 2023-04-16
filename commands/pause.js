@@ -1,5 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { player } = require('../utilities/audio-player.js');
+
+const AudioManager = require('../utilities/audio-manager.js');
+const manager = new AudioManager();
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -14,13 +16,8 @@ module.exports = {
 				);
 				return;
 			}
-			if (player.state.status === 'playing') {
-				player.pause();
-				await interaction.editReply('Player paused.');
-			}
-			else {
-				await interaction.editReply('Player is not playing.');
-			}
+			manager.pause();
+			await interaction.editReply('Player paused.');
 		}
 		catch (error) {
 			console.error('Error executing play command:', error);

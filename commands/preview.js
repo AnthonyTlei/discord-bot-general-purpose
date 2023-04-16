@@ -2,7 +2,6 @@ const { SlashCommandBuilder } = require('discord.js');
 const {
 	joinVoiceChannel,
 	createAudioResource,
-	createAudioPlayer,
 } = require('@discordjs/voice');
 const { spotifyClientId, spotifyClientSecret } = require('../config.json');
 
@@ -10,6 +9,11 @@ const axios = require('axios');
 const credentials = Buffer.from(
 	`${spotifyClientId}:${spotifyClientSecret}`,
 ).toString('base64');
+
+const AudioManager = require('../utilities/audio-manager.js');
+const Song = require('../utilities/song.js');
+
+const manager = new AudioManager();
 
 const getSpotifyAccessToken = async () => {
 	try {
@@ -57,7 +61,7 @@ module.exports = {
 			option
 				.setName('link')
 				.setDescription('The Link of the Spotify track to preview.')
-				.setRequired(true)
+				.setRequired(false)
 				.setMaxLength(2000),
 		),
 	async execute(interaction) {
@@ -67,13 +71,17 @@ module.exports = {
 				await interaction.editReply('You need to be in a voice channel to use this command.');
 				return;
 			}
+			const connection = joinVoiceChannel({
+				channelId: interaction.member.voice.channelId,
+				guildId: interaction.guildId,
+				adapterCreator: interaction.guild.voiceAdapterCreator,
+			});
+			if (!connection) {
+				await interaction.editReply('Error joining voice channel.');
+				return;
+			}
 			const link = interaction.options.getString('link');
 			if (link) {
-				const connection = joinVoiceChannel({
-					channelId: interaction.member.voice.channelId,
-					guildId: interaction.guildId,
-					adapterCreator: interaction.guild.voiceAdapterCreator,
-				});
 				const accessToken = await getSpotifyAccessToken();
 				const trackId = link.split('/').pop();
 				const trackInfo = await getSpotifyTrackInfo(trackId, accessToken);
@@ -81,11 +89,15 @@ module.exports = {
 					await interaction.editReply('No preview available for this song.');
 					return;
 				}
-				const player = createAudioPlayer();
 				const resource = createAudioResource(trackInfo.preview_url);
-				player.play(resource);
-				connection.subscribe(player);
+				const song = new Song(resource);
+				manager.play(song);
+				connection.subscribe(manager.player);
 				await interaction.editReply('Playing preview of: ' + trackInfo.name + ' by ' + trackInfo.artists[0].name);
+			}
+			else {
+				manager.resume();
+				await interaction.editReply('Resuming song.');
 			}
 		}
 		catch (error) {
