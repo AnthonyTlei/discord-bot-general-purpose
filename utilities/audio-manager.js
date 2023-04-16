@@ -10,10 +10,8 @@ const { Song } = require('./song.js');
 // TODO : repeatSong?
 // TODO : repeatQueue?
 // TODO : seek?
-// TODO : Improve the Song class, add title, duration, etc.
 // TODO : Implent /queue command.
 // TODO : Add unique ID to every song in queue so user can remove specific song from queue.
-// TODO : Find way to send messages between AudioManager and Discord, to editReply the interaction. (Maybe use a callback function?)
 
 class AudioManager {
 	constructor() {
@@ -25,6 +23,11 @@ class AudioManager {
 		this.m_queue = new Queue();
 		this.m_current_song = new Song();
 		this.m_player.on(AudioPlayerStatus.Idle, () => {
+			this._playNextSong();
+		});
+		this.m_player.on('error', (error) => {
+			// TODO : Emit signal to send message to user?
+			console.error('Error in AudioManager:', error);
 			this._playNextSong();
 		});
 	}
@@ -44,6 +47,26 @@ class AudioManager {
 		this.m_player.play(resource);
 	}
 
+	play(song, callback) {
+		let reply = '';
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			this._addToQueue(song);
+			this._playNextSong();
+			reply = 'Playing: ' + this.m_current_song.title;
+			break;
+		case AudioPlayerStatus.Playing:
+		case AudioPlayerStatus.Paused:
+		case AudioPlayerStatus.Buffering:
+			this._addToQueue(song);
+			reply = 'Added to queue: ' + song.title;
+			break;
+		}
+		if (callback) {
+			callback(reply);
+		}
+	}
+
 	resume(callback) {
 		let reply = '';
 		switch (this.m_player.state.status) {
@@ -59,26 +82,6 @@ class AudioManager {
 			break;
 		case AudioPlayerStatus.Buffering:
 			reply = 'Buffering: ' + this.m_current_song.title;
-			break;
-		}
-		if (callback) {
-			callback(reply);
-		}
-	}
-
-	play(song, callback) {
-		let reply = '';
-		switch (this.m_player.state.status) {
-		case AudioPlayerStatus.Idle:
-			this._addToQueue(song);
-			this._playNextSong();
-			reply = 'Playing: ' + this.m_current_song.title;
-			break;
-		case AudioPlayerStatus.Playing:
-		case AudioPlayerStatus.Paused:
-		case AudioPlayerStatus.Buffering:
-			this._addToQueue(song);
-			reply = 'Added to queue: ' + song.title;
 			break;
 		}
 		if (callback) {
