@@ -27,7 +27,11 @@ const getYouTubeVideoInfo = async (query) => {
 
 const getYouTubeVideoStream = async (url) => {
 	try {
-		return await ytdl(url, { filter: 'audioonly' });
+		const streamOptions = {
+			filter: 'audioonly',
+			highWaterMark: 1 << 25,
+		};
+		return await ytdl(url, { streamOptions });
 	}
 	catch (error) {
 		console.error('Error getting YouTube video stream:', error);
@@ -42,6 +46,9 @@ const createSongFromVideo = async (video) => {
 		const type = SongType.YOUTUBE;
 		const url = `https://www.youtube.com/watch?v=${video.id.videoId}`;
 		const stream = await getYouTubeVideoStream(url);
+		stream.on('error', (error) => {
+			console.error('Error in audio stream:', error);
+		});
 		const resource = createAudioResource(stream);
 		return new Song(resource, title, artist, type);
 	}
