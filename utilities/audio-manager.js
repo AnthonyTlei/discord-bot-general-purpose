@@ -186,6 +186,14 @@ class AudioManager extends EventEmitter {
 	get player() {
 		return this.m_player;
 	}
+
+	get currentSong() {
+		return this.m_current_song;
+	}
+
+	get queue() {
+		return this.m_queue;
+	}
 }
 
 module.exports = {

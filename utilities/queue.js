@@ -21,6 +21,13 @@ class Queue {
 		return this.elements[this.head];
 	}
 
+	get(index) {
+		if (index < 0 || index >= this.length) {
+			return undefined;
+		}
+		return this.elements[this.head + index];
+	}
+
 	clear() {
 		this.elements = {};
 		this.head = 0;
