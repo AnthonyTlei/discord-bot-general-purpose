@@ -27,11 +27,7 @@ const getYouTubeVideoInfo = async (query) => {
 
 const getYouTubeVideoStream = async (url) => {
 	try {
-		const streamOptions = {
-			filter: 'audioonly',
-			highWaterMark: 1 << 25,
-		};
-		return await ytdl(url, { streamOptions });
+		return await ytdl(url, { filter: 'audioonly', highWaterMark: 1 << 25 });
 	}
 	catch (error) {
 		console.error('Error getting YouTube video stream:', error);
