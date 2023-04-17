@@ -193,6 +193,10 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Playing:
 		case AudioPlayerStatus.Paused:
 		case AudioPlayerStatus.Buffering:
+			if (this.m_queue.isEmpty) {
+				reply = 'Queue is already empty.';
+				break;
+			}
 			this.m_queue.clear();
 			reply = 'Cleared Queue.';
 			break;
