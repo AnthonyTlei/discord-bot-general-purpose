@@ -95,9 +95,24 @@ class AudioManager extends EventEmitter {
 	}
 
 	pause(callback) {
-		this.m_player.pause();
+		let reply = '';
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			reply = 'Nothing is playing.';
+			break;
+		case AudioPlayerStatus.Playing:
+			this.m_player.pause();
+			reply = 'Paused: ' + this.m_current_song.title;
+			break;
+		case AudioPlayerStatus.Paused:
+			reply = 'Player is already paused.';
+			break;
+		case AudioPlayerStatus.Buffering:
+			reply = 'Buffering: ' + this.m_current_song.title;
+			break;
+		}
 		if (callback) {
-			callback('Paused: ' + this.m_current_song.title);
+			callback(reply);
 		}
 	}
 
