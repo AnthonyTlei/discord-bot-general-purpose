@@ -6,8 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
+    "start:private": "node private-index.js",
     "deploy:local": "node deploy-commands.js",
-    "deploy:global": "node deploy-commands-global.js"
+    "deploy:global": "node deploy-commands-global.js",
+    "deploy:private": "node deploy-private-commands.js"
   },
   "author": "",
   "license": "ISC",

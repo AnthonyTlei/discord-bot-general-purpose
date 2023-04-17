@@ -1,5 +1,8 @@
 node_modules
+
+reference-commands/
+private-commands/
+assets/
+
 .env
 config.json
-assets
-reference-commands/
