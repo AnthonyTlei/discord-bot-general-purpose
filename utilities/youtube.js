@@ -1,5 +1,7 @@
+const { createAudioResource } = require('@discordjs/voice');
 const { youtubeAPIKey } = require('../config.json');
 const { google } = require('googleapis');
+const { Song, SongType } = require('./song');
 const ytdl = require('ytdl-core-discord');
 
 const youtube = google.youtube({
@@ -33,7 +35,24 @@ const getYouTubeVideoStream = async (url) => {
 	}
 };
 
+const createSongFromVideo = async (video) => {
+	try {
+		const title = video.snippet.title;
+		const artist = video.snippet.channelTitle;
+		const type = SongType.YOUTUBE;
+		const url = `https://www.youtube.com/watch?v=${video.id.videoId}`;
+		const stream = await getYouTubeVideoStream(url);
+		const resource = createAudioResource(stream);
+		return new Song(resource, title, artist, type);
+	}
+	catch (error) {
+		console.error('Error creating song from YouTube video:', error);
+		return null;
+	}
+};
+
 module.exports = {
 	getYouTubeVideoInfo,
 	getYouTubeVideoStream,
+	createSongFromVideo,
 };
