@@ -1,12 +1,10 @@
 const { SlashCommandBuilder } = require('discord.js');
 const {
 	joinVoiceChannel,
-	createAudioResource,
 } = require('@discordjs/voice');
 
 const { AudioManager } = require('../managers/audio.js');
-const { SongType, Song } = require('../utilities/song.js');
-const { getSpotifyAccessToken, getSpotifyTrackInfo } = require('../utilities/spotify.js');
+const { getSpotifyAccessToken, getSpotifyTrackInfo, getSpotifyTrackId, validateSpotifyLink, SpotifyLinkType, createSongFromTrackInfo } = require('../utilities/spotify.js');
 
 const manager = new AudioManager();
 
@@ -38,22 +36,35 @@ module.exports = {
 				return;
 			}
 			const link = interaction.options.getString('link');
-			if (link) {
-				const accessToken = await getSpotifyAccessToken();
-				const trackId = link.split('/').pop();
+			const linkType = validateSpotifyLink(link);
+			const accessToken = await getSpotifyAccessToken();
+			if (linkType === SpotifyLinkType.INVALID) {
+				await interaction.editReply('Invalid Spotify link.');
+				return;
+			}
+			if (linkType === SpotifyLinkType.TRACK) {
+				const trackId = getSpotifyTrackId(link);
 				const trackInfo = await getSpotifyTrackInfo(trackId, accessToken);
-				const title = trackInfo.name;
-				const artist = trackInfo.artists[0].name;
-				const type = SongType.SPOTIFY;
-				if (!trackInfo.preview_url) {
-					await interaction.editReply('No preview available for this song.');
+				if (!trackInfo) {
+					await interaction.editReply('Error getting track info.');
 					return;
 				}
-				const resource = createAudioResource(trackInfo.preview_url);
-				const song = new Song(resource, title, artist, type);
+				const song = await createSongFromTrackInfo(trackInfo, (err) => {
+					interaction.editReply(err);
+				});
+				if (!song) {
+					return;
+				}
 				await manager.play(song, (reply) => interaction.editReply(reply));
-				connection.subscribe(manager.player);
 			}
+			if (linkType === SpotifyLinkType.PLAYLIST) {
+				// TODO: Add support for playlists
+				await interaction.editReply('Playlists are not currently supported.');
+				return;
+			}
+			// TODO: Add support for albums
+			// TODO: Refactor connection?
+			connection.subscribe(manager.player);
 		}
 		catch (error) {
 			console.error('Error executing preview command:', error);
