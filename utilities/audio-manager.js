@@ -6,7 +6,6 @@ const Queue = require('./queue.js');
 // TODO : removeFromQueue?
 // TODO : clearQueue?
 // TODO : shuffleQueue?
-// TODO : skipSong?
 // TODO : skipToSong?
 // TODO : repeatSong?
 // TODO : repeatQueue?
@@ -41,15 +40,18 @@ class AudioManager extends EventEmitter {
 		this.m_queue.enqueue(song);
 	}
 
-	_playNextSong() {
-		if (this.m_queue.isEmpty) {
-			this.m_player.stop();
-			return;
+	_playNextSong(count = 1) {
+		for (let i = 0; i < count; i++) {
+			if (this.m_queue.isEmpty) {
+				this.m_player.stop();
+				this.m_current_song = null;
+				return;
+			}
+			const song = this.m_queue.dequeue();
+			const resource = song.resource;
+			this.m_current_song = song;
+			this.m_player.play(resource);
 		}
-		const song = this.m_queue.dequeue();
-		const resource = song.resource;
-		this.m_current_song = song;
-		this.m_player.play(resource);
 	}
 
 	play(song, callback) {
@@ -65,6 +67,29 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Buffering:
 			this._addToQueue(song);
 			reply = 'Added to queue: ' + song.title;
+			break;
+		}
+		if (callback) {
+			callback(reply);
+		}
+	}
+
+	skip(callback, count = 1) {
+		let reply = '';
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			reply = 'Nothing is playing.';
+			break;
+		case AudioPlayerStatus.Playing:
+		case AudioPlayerStatus.Paused:
+		case AudioPlayerStatus.Buffering:
+			this._playNextSong(count);
+			if (this.m_current_song) {
+				reply = 'Now playing: ' + this.m_current_song.title;
+			}
+			else {
+				reply = 'Nothing is playing.';
+			}
 			break;
 		}
 		if (callback) {

@@ -5,8 +5,12 @@ const manager = new AudioManager();
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('pause')
-		.setDescription('Pauses Player.'),
+		.setName('skip')
+		.setDescription('Skips a song.')
+		.addIntegerOption(option =>
+			option.setName('count')
+				.setDescription('The number times to skip.')
+				.setRequired(false)),
 	async execute(interaction) {
 		try {
 			await interaction.deferReply();
@@ -16,10 +20,11 @@ module.exports = {
 				);
 				return;
 			}
-			await manager.pause((reply) => interaction.editReply(reply));
+			const count = interaction.options.getInteger('count');
+			await manager.skip((reply) => interaction.editReply(reply), count);
 		}
 		catch (error) {
-			console.error('Error executing pause command:', error);
+			console.error('Error executing skip command:', error);
 		}
 	},
 };

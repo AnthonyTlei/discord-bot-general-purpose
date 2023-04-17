@@ -99,7 +99,7 @@ module.exports = {
 			}
 		}
 		catch (error) {
-			console.error('Error executing play-song command:', error);
+			console.error('Error executing preview command:', error);
 		}
 	},
 };
