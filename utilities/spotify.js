@@ -12,8 +12,10 @@ const SpotifyLinkType = {
 	INVALID: 'invalid',
 };
 
-const trackRegex = /^https:\/\/open\.spotify\.com\/track\/(\w{22})(\?si=[\w-]+)?$/;
-const playlistRegex = /^https:\/\/open\.spotify\.com\/playlist\/(\w{22})(\?si=[\w-]+)?$/;
+const trackRegex =
+  /^https:\/\/open\.spotify\.com\/track\/(\w{22})(\?si=[\w-]+)?$/;
+const playlistRegex =
+  /^https:\/\/open\.spotify\.com\/playlist\/(\w{22})(\?si=[\w-]+)?$/;
 
 const getSpotifyAccessToken = async () => {
 	try {
@@ -53,6 +55,24 @@ const getSpotifyTrackInfo = async (trackId, accessToken) => {
 	}
 };
 
+const getSpotifyPlaylistInfo = async (playlistId, accessToken) => {
+	try {
+		const response = await axios.get(
+			`https://api.spotify.com/v1/playlists/${playlistId}`,
+			{
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			},
+		);
+		return response.data;
+	}
+	catch (error) {
+		console.error('Error getting Spotify playlist info:', error);
+		return null;
+	}
+};
+
 const validateSpotifyLink = (link) => {
 	if (trackRegex.test(link)) {
 		return SpotifyLinkType.TRACK;
@@ -67,6 +87,11 @@ const validateSpotifyLink = (link) => {
 
 const getSpotifyTrackId = (link) => {
 	const match = trackRegex.exec(link);
+	return match ? match[1] : null;
+};
+
+const getSpotifyPlaylistId = (link) => {
+	const match = playlistRegex.exec(link);
 	return match ? match[1] : null;
 };
 
@@ -85,10 +110,12 @@ const createSongFromTrackInfo = (trackInfo, callback) => {
 };
 
 module.exports = {
-	getSpotifyAccessToken,
-	getSpotifyTrackInfo,
 	createSongFromTrackInfo,
-	validateSpotifyLink,
-	SpotifyLinkType,
+	getSpotifyAccessToken,
+	getSpotifyPlaylistInfo,
+	getSpotifyPlaylistId,
 	getSpotifyTrackId,
+	getSpotifyTrackInfo,
+	SpotifyLinkType,
+	validateSpotifyLink,
 };

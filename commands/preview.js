@@ -1,10 +1,17 @@
 const { SlashCommandBuilder } = require('discord.js');
-const {
-	joinVoiceChannel,
-} = require('@discordjs/voice');
+const { joinVoiceChannel } = require('@discordjs/voice');
 
 const { AudioManager } = require('../managers/audio.js');
-const { getSpotifyAccessToken, getSpotifyTrackInfo, getSpotifyTrackId, validateSpotifyLink, SpotifyLinkType, createSongFromTrackInfo } = require('../utilities/spotify.js');
+const {
+	getSpotifyAccessToken,
+	getSpotifyTrackInfo,
+	getSpotifyPlaylistId,
+	getSpotifyTrackId,
+	validateSpotifyLink,
+	SpotifyLinkType,
+	createSongFromTrackInfo,
+	getSpotifyPlaylistInfo,
+} = require('../utilities/spotify.js');
 
 const manager = new AudioManager();
 
@@ -23,7 +30,9 @@ module.exports = {
 		try {
 			await interaction.deferReply();
 			if (!interaction.member.voice.channelId) {
-				await interaction.editReply('You need to be in a voice channel to use this command.');
+				await interaction.editReply(
+					'You need to be in a voice channel to use this command.',
+				);
 				return;
 			}
 			const connection = joinVoiceChannel({
@@ -58,12 +67,35 @@ module.exports = {
 				await manager.play(song, (reply) => interaction.editReply(reply));
 			}
 			if (linkType === SpotifyLinkType.PLAYLIST) {
-				// TODO: Add support for playlists
-				await interaction.editReply('Playlists are not currently supported.');
-				return;
+				const playlistId = getSpotifyPlaylistId(link);
+				const playlistInfo = await getSpotifyPlaylistInfo(
+					playlistId,
+					accessToken,
+				);
+				if (!playlistInfo) {
+					await interaction.editReply('Error getting playlist info.');
+					return;
+				}
+				const songs = await Promise.all(
+					playlistInfo.tracks.items.map(async (item) => {
+						const song = await createSongFromTrackInfo(
+							item.track,
+							(err) => interaction.editReply(err),
+						);
+						if (!song) {
+							return null;
+						}
+						return song;
+					}),
+				);
+				if (!songs) {
+					return;
+				}
+				await manager.playPlaylist(songs, (reply) => interaction.editReply(reply));
 			}
-			// TODO: Add support for albums
+			// TODO: Add support for albums.
 			// TODO: Refactor connection?
+			// TODO: refactor callback error into an error code.
 			connection.subscribe(manager.player);
 		}
 		catch (error) {

@@ -73,6 +73,30 @@ class AudioManager extends EventEmitter {
 		}
 	}
 
+	playPlaylist(playlist, callback) {
+		let reply = '';
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			for (const song of playlist) {
+				this._addToQueue(song);
+			}
+			this._playNextSong();
+			reply = 'Playing: ' + this.m_current_song.title;
+			break;
+		case AudioPlayerStatus.Playing:
+		case AudioPlayerStatus.Paused:
+		case AudioPlayerStatus.Buffering:
+			for (const song of playlist) {
+				this._addToQueue(song);
+			}
+			reply = 'Added to queue: ' + playlist.length + ' songs.';
+			break;
+		}
+		if (callback) {
+			callback(reply);
+		}
+	}
+
 	skip(callback, count = 1) {
 		let reply = '';
 		switch (this.m_player.state.status) {
