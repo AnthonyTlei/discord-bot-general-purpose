@@ -58,8 +58,28 @@ const createSongFromVideo = async (video) => {
 	}
 };
 
+const createSongFromJSON = async (song) => {
+	try {
+		const title = song.title;
+		const artist = song.artist;
+		const type = SongType.YOUTUBE;
+		const url = song.url;
+		const stream = await getYouTubeVideoStream(url);
+		stream.on('error', (error) => {
+			console.error('Error in audio stream:', error);
+		});
+		const resource = createAudioResource(stream);
+		return new Song(resource, title, artist, type);
+	}
+	catch (error) {
+		console.error('Error creating song from YouTube video:', error);
+		return null;
+	}
+};
+
 module.exports = {
 	getYouTubeVideoInfo,
 	getYouTubeVideoStream,
 	createSongFromVideo,
+	createSongFromJSON,
 };
