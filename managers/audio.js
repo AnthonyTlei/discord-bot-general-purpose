@@ -194,7 +194,6 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Paused:
 		case AudioPlayerStatus.Buffering:
 			this.m_queue.clear();
-			this.m_current_song = null;
 			reply = 'Cleared Queue.';
 			break;
 		}
