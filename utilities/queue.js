@@ -46,6 +46,54 @@ class Queue {
 		}
 	}
 
+	remove(index) {
+		if (index < 0 || index >= this.length) {
+			return null;
+		}
+		const removedElement = this.elements[this.head + index];
+		for (let i = index; i < this.length - 1; i++) {
+			this.elements[this.head + i] = this.elements[this.head + i + 1];
+		}
+		delete this.elements[this.tail - 1];
+		this.tail--;
+		return removedElement;
+	}
+
+	removeByQuery(title, exact = false, all = false) {
+		const removed = [];
+		for (let i = this.length - 1; i >= 0; i--) {
+			const element = this.elements[this.head + i];
+			const isMatch = exact
+				? element.title === title
+				: element.title.toLowerCase().includes(title.toLowerCase());
+			if (isMatch) {
+				removed.push(element);
+				this.remove(i);
+				if (!all) {
+					break;
+				}
+			}
+		}
+		return removed;
+	}
+
+	search(title, exact = true, all = true) {
+		const matches = [];
+		for (let i = 0; i < this.length; i++) {
+			const element = this.elements[this.head + i];
+			const isMatch = exact
+				? element.title === title
+				: element.title.toLowerCase().includes(title.toLowerCase());
+			if (isMatch) {
+				matches.push(element);
+				if (!all) {
+					break;
+				}
+			}
+		}
+		return matches;
+	}
+
 	get length() {
 		return this.tail - this.head;
 	}

@@ -3,14 +3,10 @@ const { EventEmitter } = require('events');
 const { Song } = require('../utilities/song.js');
 const Queue = require('../utilities/queue.js');
 
-// TODO : removeFromQueue?
-// TODO : shuffleQueue?
 // TODO : skipToSong?
 // TODO : repeatSong?
 // TODO : repeatQueue?
 // TODO : seek?
-// TODO : Implent /queue command.
-// TODO : Add unique ID to every song in queue so user can remove specific song from queue.
 
 const AudioManagerEvents = {
 	ERROR: 'error',
@@ -57,7 +53,7 @@ class AudioManager extends EventEmitter {
 		let reply = '';
 		if (this.m_queue.isEmpty) {
 			reply = 'The queue is empty.';
-			return;
+			return reply;
 		}
 		reply = 'Currently playing:\n';
 		reply += `${this.m_current_song.title}\n\n`;
@@ -85,6 +81,57 @@ class AudioManager extends EventEmitter {
 		}
 		if (callback) {
 			callback(reply);
+		}
+	}
+
+	remove(id, title, exact, all, callback) {
+		let reply = '';
+		if (this.m_queue.isEmpty) {
+			reply = 'The queue is empty.';
+			if (callback) {
+				callback(reply);
+			}
+			return;
+		}
+		if (id) {
+			const song = this.m_queue.remove(id - 1);
+			if (song) {
+				reply = 'Removed: ' + song.title;
+			}
+			else {
+				reply = 'No song found with that ID.';
+			}
+			if (callback) {
+				callback(reply);
+			}
+			return;
+		}
+		else if (title) {
+			const songs = this.m_queue.removeByQuery(title, exact, all);
+			if (songs.length == 1) {
+				reply = 'Removed: ' + songs[0].title;
+			}
+			else if (songs.length > 1) {
+				reply = 'Removed: \n';
+				for (const song of songs) {
+					reply += song.title + '\n';
+				}
+			}
+			else {
+				reply = 'No songs removed.';
+			}
+			if (callback) {
+				callback(reply);
+			}
+			return;
+		}
+		else {
+			const song = this.m_queue.remove(0);
+			reply = 'Removed: ' + song.title;
+			if (callback) {
+				callback(reply);
+			}
+			return;
 		}
 	}
 

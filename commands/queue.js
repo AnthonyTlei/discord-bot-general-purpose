@@ -16,7 +16,7 @@ module.exports = {
 				);
 				return;
 			}
-			const reply = await manager._parseQueue();
+			const reply = manager._parseQueue();
 			await interaction.editReply(reply);
 		}
 		catch (error) {
