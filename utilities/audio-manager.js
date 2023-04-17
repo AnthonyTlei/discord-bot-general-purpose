@@ -4,7 +4,6 @@ const { Song } = require('./song.js');
 const Queue = require('./queue.js');
 
 // TODO : removeFromQueue?
-// TODO : clearQueue?
 // TODO : shuffleQueue?
 // TODO : skipToSong?
 // TODO : repeatSong?
@@ -134,6 +133,45 @@ class AudioManager extends EventEmitter {
 			break;
 		case AudioPlayerStatus.Buffering:
 			reply = 'Buffering: ' + this.m_current_song.title;
+			break;
+		}
+		if (callback) {
+			callback(reply);
+		}
+	}
+
+	stop(callback) {
+		let reply = '';
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			reply = 'Nothing is playing.';
+			break;
+		case AudioPlayerStatus.Playing:
+		case AudioPlayerStatus.Paused:
+		case AudioPlayerStatus.Buffering:
+			this.m_player.stop();
+			this.m_queue.clear();
+			this.m_current_song = null;
+			reply = 'Stopped.';
+			break;
+		}
+		if (callback) {
+			callback(reply);
+		}
+	}
+
+	clear(callback) {
+		let reply = '';
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			reply = 'Nothing is playing.';
+			break;
+		case AudioPlayerStatus.Playing:
+		case AudioPlayerStatus.Paused:
+		case AudioPlayerStatus.Buffering:
+			this.m_queue.clear();
+			this.m_current_song = null;
+			reply = 'Cleared Queue.';
 			break;
 		}
 		if (callback) {

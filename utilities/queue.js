@@ -21,6 +21,12 @@ class Queue {
 		return this.elements[this.head];
 	}
 
+	clear() {
+		this.elements = {};
+		this.head = 0;
+		this.tail = 0;
+	}
+
 	get length() {
 		return this.tail - this.head;
 	}
