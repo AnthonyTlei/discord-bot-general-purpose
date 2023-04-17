@@ -53,6 +53,21 @@ class AudioManager extends EventEmitter {
 		}
 	}
 
+	_parseQueue() {
+		let reply = '';
+		if (this.m_queue.isEmpty) {
+			reply = 'The queue is empty.';
+			return;
+		}
+		reply = 'Currently playing:\n';
+		reply += `${this.m_current_song.title}\n\n`;
+		reply += 'In Queue: \n';
+		for (let i = 0; i < this.m_queue.length; i++) {
+			reply += `${i + 1}. ${this.m_queue.get(i).title}\n`;
+		}
+		return reply;
+	}
+
 	play(song, callback) {
 		let reply = '';
 		switch (this.m_player.state.status) {
@@ -199,6 +214,28 @@ class AudioManager extends EventEmitter {
 			}
 			this.m_queue.clear();
 			reply = 'Cleared Queue.';
+			break;
+		}
+		if (callback) {
+			callback(reply);
+		}
+	}
+
+	shuffle(callback) {
+		let reply = '';
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			reply = 'Nothing is playing.';
+			break;
+		case AudioPlayerStatus.Playing:
+		case AudioPlayerStatus.Paused:
+		case AudioPlayerStatus.Buffering:
+			if (this.m_queue.isEmpty) {
+				reply = 'Queue is empty.';
+				break;
+			}
+			this.m_queue.shuffle();
+			reply += this._parseQueue();
 			break;
 		}
 		if (callback) {

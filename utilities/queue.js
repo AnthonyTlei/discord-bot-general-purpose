@@ -34,6 +34,18 @@ class Queue {
 		this.tail = 0;
 	}
 
+	shuffle() {
+		const length = this.length;
+		for (let i = length - 1; i > 0; i--) {
+			const randomIndex = Math.floor(Math.random() * (i + 1));
+			const currentIndex = this.head + i;
+			const randomIndexWithOffset = this.head + randomIndex;
+			const temp = this.elements[currentIndex];
+			this.elements[currentIndex] = this.elements[randomIndexWithOffset];
+			this.elements[randomIndexWithOffset] = temp;
+		}
+	}
+
 	get length() {
 		return this.tail - this.head;
 	}

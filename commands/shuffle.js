@@ -5,8 +5,8 @@ const manager = new AudioManager();
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('queue')
-		.setDescription('Displays Queue information.'),
+		.setName('shuffle')
+		.setDescription('Shuffles the queue.'),
 	async execute(interaction) {
 		try {
 			await interaction.deferReply();
@@ -16,11 +16,10 @@ module.exports = {
 				);
 				return;
 			}
-			const reply = await manager._parseQueue();
-			await interaction.editReply(reply);
+			await manager.shuffle((reply) => interaction.editReply(reply));
 		}
 		catch (error) {
-			console.error('Error executing queu command:', error);
+			console.error('Error executing clear command:', error);
 		}
 	},
 };
