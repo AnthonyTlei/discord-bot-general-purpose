@@ -20,7 +20,10 @@ module.exports = {
 				);
 				return;
 			}
-			const count = interaction.options.getInteger('count');
+			let count = interaction.options.getInteger('count');
+			if (!count) {
+				count = 1;
+			}
 			await manager.skip((reply) => interaction.editReply(reply), count);
 		}
 		catch (error) {
