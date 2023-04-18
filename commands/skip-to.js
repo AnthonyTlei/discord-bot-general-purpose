@@ -40,7 +40,7 @@ module.exports = {
 			await manager.skipTo(id, title, (reply) => interaction.editReply(reply));
 		}
 		catch (error) {
-			console.error('Error executing skip command:', error);
+			console.error('Error executing skip-to command:', error);
 		}
 	},
 };

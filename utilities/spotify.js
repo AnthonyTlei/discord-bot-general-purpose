@@ -105,8 +105,9 @@ const createSongFromTrackInfo = (trackInfo, callback) => {
 		}
 		return null;
 	}
+	const url = trackInfo.preview_url;
 	const resource = createAudioResource(trackInfo.preview_url);
-	return new Song(resource, title, artist, type);
+	return new Song(resource, title, artist, url, type);
 };
 
 module.exports = {

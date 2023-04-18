@@ -50,7 +50,7 @@ module.exports = {
 			});
 		}
 		catch (error) {
-			console.error('Error executing preview command:', error);
+			console.error('Error executing play-list command:', error);
 		}
 	},
 };

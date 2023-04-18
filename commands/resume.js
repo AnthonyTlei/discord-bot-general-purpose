@@ -19,7 +19,7 @@ module.exports = {
 			await manager.resume((reply) => interaction.editReply(reply));
 		}
 		catch (error) {
-			console.error('Error executing play command:', error);
+			console.error('Error executing resume command:', error);
 		}
 	},
 };

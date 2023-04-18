@@ -46,7 +46,7 @@ const createSongFromVideo = async (video) => {
 			console.error('Error in audio stream:', error);
 		});
 		const resource = createAudioResource(stream);
-		return new Song(resource, title, artist, type);
+		return new Song(resource, title, artist, url, type);
 	}
 	catch (error) {
 		console.error('Error creating song from YouTube video:', error);

@@ -1,4 +1,4 @@
-const { createAudioPlayer, AudioPlayerStatus } = require('@discordjs/voice');
+const { createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
 const { EventEmitter } = require('events');
 const { Song } = require('../utilities/song.js');
 const Queue = require('../utilities/queue.js');
@@ -21,6 +21,7 @@ class AudioManager extends EventEmitter {
 		this.m_player = createAudioPlayer();
 		this.m_queue = new Queue();
 		this.m_current_song = new Song();
+		this.m_repeat_song = false;
 		this.m_player.on(AudioPlayerStatus.Idle, () => {
 			this._playNextSong();
 		});
@@ -34,7 +35,15 @@ class AudioManager extends EventEmitter {
 		this.m_queue.enqueue(song);
 	}
 
+	_createResource(url) {
+		return createAudioResource(url);
+	}
+
 	_playNextSong(count = 1) {
+		if (this.m_repeat_song) {
+			this.m_player.play(this._createResource(this.m_current_song.url));
+			return;
+		}
 		for (let i = 0; i < count; i++) {
 			if (this.m_queue.isEmpty) {
 				this.m_player.stop();
@@ -50,12 +59,13 @@ class AudioManager extends EventEmitter {
 
 	_parseQueue() {
 		let reply = '';
+		reply = 'Currently playing:\n';
+		reply += `${this.m_current_song.title}\n\n`;
+		reply += 'Repeat Song: ' + this.m_repeat_song + '\n\n';
 		if (this.m_queue.isEmpty) {
 			reply = 'The queue is empty.';
 			return reply;
 		}
-		reply = 'Currently playing:\n';
-		reply += `${this.m_current_song.title}\n\n`;
 		reply += 'In Queue: \n';
 		for (let i = 0; i < this.m_queue.length; i++) {
 			reply += `${i + 1}. ${this.m_queue.get(i).title}\n`;
@@ -329,12 +339,20 @@ class AudioManager extends EventEmitter {
 		this.m_player = player;
 	}
 
+	set repeatSong(bool) {
+		this.m_repeat_song = bool;
+	}
+
 	get player() {
 		return this.m_player;
 	}
 
 	get currentSong() {
 		return this.m_current_song;
+	}
+
+	get repeatSong() {
+		return this.m_repeat_song;
 	}
 
 	get queue() {

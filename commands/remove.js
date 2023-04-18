@@ -53,7 +53,7 @@ module.exports = {
 			);
 		}
 		catch (error) {
-			console.error('Error executing queu command:', error);
+			console.error('Error executing remove command:', error);
 		}
 	},
 };

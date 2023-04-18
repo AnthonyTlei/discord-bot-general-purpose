@@ -19,7 +19,7 @@ module.exports = {
 			await manager.shuffle((reply) => interaction.editReply(reply));
 		}
 		catch (error) {
-			console.error('Error executing clear command:', error);
+			console.error('Error executing shuffle command:', error);
 		}
 	},
 };

@@ -6,10 +6,11 @@ const SongType = {
 };
 
 class Song {
-	constructor(resource, title = 'Unknown', artist = 'Unknown', type = SongType.UNKNOWN) {
+	constructor(resource, title = null, artist = null, url = null, type = SongType.UNKNOWN) {
 		this.resource = resource;
 		this.title = title;
 		this.artist = artist;
+		this.url = url;
 		this.type = type;
 	}
 }
