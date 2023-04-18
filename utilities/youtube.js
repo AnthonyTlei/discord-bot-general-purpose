@@ -3,7 +3,6 @@ const { youtubeAPIKey } = require('../config.json');
 const { google } = require('googleapis');
 const { Song, SongType } = require('./song');
 const ytdl = require('ytdl-core-discord');
-const fluentFfmpeg = require('fluent-ffmpeg');
 
 const youtube = google.youtube({
 	version: 'v3',
