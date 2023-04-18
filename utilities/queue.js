@@ -28,6 +28,15 @@ class Queue {
 		return this.elements[this.head + index];
 	}
 
+	indexOfFirst(element) {
+		for (let i = 0; i < this.length; i++) {
+			if (this.elements[this.head + i] === element) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	clear() {
 		this.elements = {};
 		this.head = 0;

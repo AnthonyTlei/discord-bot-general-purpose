@@ -3,7 +3,6 @@ const { EventEmitter } = require('events');
 const { Song } = require('../utilities/song.js');
 const Queue = require('../utilities/queue.js');
 
-// TODO : skipToSong?
 // TODO : repeatSong?
 // TODO : repeatQueue?
 // TODO : seek?
@@ -159,7 +158,7 @@ class AudioManager extends EventEmitter {
 		}
 	}
 
-	skip(callback, count = 1) {
+	skip(count, callback) {
 		let reply = '';
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:
@@ -168,12 +167,42 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Playing:
 		case AudioPlayerStatus.Paused:
 		case AudioPlayerStatus.Buffering:
-			this._playNextSong(count);
+			if (count) {
+				this._playNextSong(count);
+			}
+			else {
+				this._playNextSong();
+			}
 			if (this.m_current_song) {
 				reply = 'Now playing: ' + this.m_current_song.title;
 			}
 			else {
 				reply = 'Nothing is playing.';
+			}
+			break;
+		}
+		if (callback) {
+			callback(reply);
+		}
+	}
+
+	skipTo(title, callback) {
+		let reply = '';
+		let songs = [];
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			reply = 'Nothing is playing.';
+			break;
+		case AudioPlayerStatus.Playing:
+		case AudioPlayerStatus.Paused:
+		case AudioPlayerStatus.Buffering:
+			songs = this.m_queue.search(title, true, true);
+			if (songs.length == 0) {
+				reply = 'Song not in queue.';
+			}
+			else {
+				this._playNextSong(this.m_queue.indexOfFirst(songs[0]) + 1);
+				reply = 'Now playing: ' + this.m_current_song.title;
 			}
 			break;
 		}
