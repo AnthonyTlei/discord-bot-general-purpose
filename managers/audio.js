@@ -186,7 +186,7 @@ class AudioManager extends EventEmitter {
 		}
 	}
 
-	skipTo(title, callback) {
+	skipTo(id, title, callback) {
 		let reply = '';
 		let songs = [];
 		switch (this.m_player.state.status) {
@@ -196,15 +196,21 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Playing:
 		case AudioPlayerStatus.Paused:
 		case AudioPlayerStatus.Buffering:
-			songs = this.m_queue.search(title, true, true);
-			if (songs.length == 0) {
-				reply = 'Song not in queue.';
+			if (id) {
+				this.skip(id, callback);
+				return;
 			}
-			else {
-				this._playNextSong(this.m_queue.indexOfFirst(songs[0]) + 1);
-				reply = 'Now playing: ' + this.m_current_song.title;
+			if (title) {
+				songs = this.m_queue.search(title, true, true);
+				if (songs.length == 0) {
+					reply = 'Song not in queue.';
+				}
+				else {
+					this._playNextSong(this.m_queue.indexOfFirst(songs[0]) + 1);
+					reply = 'Now playing: ' + this.m_current_song.title;
+				}
+				break;
 			}
-			break;
 		}
 		if (callback) {
 			callback(reply);
