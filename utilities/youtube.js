@@ -3,6 +3,7 @@ const { youtubeAPIKey } = require('../config.json');
 const { google } = require('googleapis');
 const { Song, SongType } = require('./song');
 const ytdl = require('ytdl-core-discord');
+const fluentFfmpeg = require('fluent-ffmpeg');
 
 const youtube = google.youtube({
 	version: 'v3',
@@ -25,9 +26,12 @@ const getYouTubeVideoInfo = async (query) => {
 	}
 };
 
-const getYouTubeVideoStream = async (url) => {
+const getYouTubeVideoStream = async (url, options) => {
 	try {
-		return await ytdl(url, { filter: 'audioonly', highWaterMark: 1 << 25 });
+		return await ytdl(
+			url,
+			options || { filter: 'audioonly', highWaterMark: 1 << 25, quality: 'highestaudio' },
+		);
 	}
 	catch (error) {
 		console.error('Error getting YouTube video stream:', error);
@@ -58,14 +62,14 @@ const createSongFromJSON = async (song) => {
 	try {
 		const title = song.title;
 		const artist = song.artist;
-		const type = SongType.YOUTUBE;
+		const type = song.type || SongType.YOUTUBE;
 		const url = song.url;
 		const stream = await getYouTubeVideoStream(url);
 		stream.on('error', (error) => {
 			console.error('Error in audio stream:', error);
 		});
 		const resource = createAudioResource(stream);
-		return new Song(resource, title, artist, type);
+		return new Song(resource, title, artist, url, type);
 	}
 	catch (error) {
 		console.error('Error creating song from YouTube video:', error);
