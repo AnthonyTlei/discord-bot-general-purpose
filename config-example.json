@@ -4,5 +4,8 @@
 	"guildId": "your-server-id-goes-here",
     "spotifyClientId": "your-spotify-client-id-goes-here",
     "spotifyClientSecret": "your-spotify-client-secret-goes-here",
-    "youtubeAPIKey": "your-youtube-api-key-goes-here"
+    "youtubeAPIKey": "your-youtube-api-key-goes-here",
+    "geniusClientId": "your-genius-client-id-goes-here",
+    "geniusClientSecret": "your-genius-client-secret-goes-here",
+    "geniusAccessToken": "your-genius-access-token-goes-here"
 }

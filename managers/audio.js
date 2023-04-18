@@ -1,9 +1,13 @@
-const { createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
+const {
+	createAudioPlayer,
+	createAudioResource,
+	AudioPlayerStatus,
+} = require('@discordjs/voice');
 const { EventEmitter } = require('events');
 const { Song } = require('../utilities/song.js');
+const { getLyrics } = require('../utilities/genius.js');
 const Queue = require('../utilities/queue.js');
 
-// TODO : repeatSong?
 // TODO : repeatQueue?
 // TODO : seek?
 
@@ -333,6 +337,26 @@ class AudioManager extends EventEmitter {
 		if (callback) {
 			callback(reply);
 		}
+	}
+
+	async lyrics() {
+		let reply = '';
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			reply = 'Nothing is playing.';
+			break;
+		case AudioPlayerStatus.Playing:
+		case AudioPlayerStatus.Paused:
+		case AudioPlayerStatus.Buffering:
+			if (this.m_current_song) {
+				reply = 'Lyrics for: ' + this.m_current_song.title + '\n\n';
+				reply += await getLyrics(this.m_current_song);
+			}
+			else {
+				reply = 'Nothing is playing.';
+			}
+		}
+		return reply;
 	}
 
 	set player(player) {
