@@ -1,11 +1,11 @@
 const {
 	createAudioPlayer,
-	createAudioResource,
 	AudioPlayerStatus,
 } = require('@discordjs/voice');
 const { EventEmitter } = require('events');
 const { getLyrics } = require('../utilities/genius.js');
 const Queue = require('../utilities/queue.js');
+const { createResourceFromURL } = require('../utilities/youtube.js');
 
 const AudioManagerEvents = {
 	ERROR: 'error',
@@ -18,16 +18,20 @@ class AudioManager extends EventEmitter {
 			return AudioManager.instance;
 		}
 		AudioManager.instance = this;
+		this._start();
+	}
+
+	_start() {
 		this.m_player = createAudioPlayer();
 		this.m_queue = new Queue();
 		this.m_current_song = null;
 		this.m_repeat_song = false;
-		this.m_player.on(AudioPlayerStatus.Idle, () => {
-			this._playNextSong();
+		this.m_player.on(AudioPlayerStatus.Idle, async () => {
+			await this._playNextSong();
 		});
-		this.m_player.on('error', (error) => {
+		this.m_player.on('error', async (error) => {
 			this.emit(AudioManagerEvents.ERROR, error);
-			this._playNextSong();
+			await this._playNextSong();
 		});
 	}
 
@@ -36,19 +40,36 @@ class AudioManager extends EventEmitter {
 	}
 
 	_createResource(url, options = {}) {
-		return createAudioResource(url, options);
+		return createResourceFromURL(url, options);
 	}
 
 	_play(resource) {
 		this.m_player.play(resource);
 	}
 
-	_playNextSong(count = 1) {
+	async _playAsync(resource) {
+		return new Promise((resolve, reject) => {
+			this.m_player.play(resource);
+			this.m_player.on(AudioPlayerStatus.Idle, () => {
+				resolve(AudioPlayerStatus.Idle);
+			});
+			this.m_player.on(AudioPlayerStatus.Playing, () => {
+				resolve(AudioPlayerStatus.Playing);
+			});
+			// TODO : Consider implementing a timeout later on for Buffering time.
+			this.m_player.on('error', (error) => {
+				reject(error);
+			});
+		},
+		);
+	}
+
+	async _playNextSong(count = 1) {
 		if (this.m_repeat_song) {
 			const url = this.m_current_song.url;
 			const options = {};
 			const resource = this._createResource(url, options);
-			this._play(resource);
+			await this._playAsync(resource);
 			return;
 		}
 		for (let i = 0; i < count; i++) {
@@ -60,7 +81,7 @@ class AudioManager extends EventEmitter {
 			const song = this.m_queue.dequeue();
 			const resource = song.resource;
 			this.m_current_song = song;
-			this._play(resource);
+			await this._playAsync(resource);
 		}
 	}
 
@@ -84,12 +105,12 @@ class AudioManager extends EventEmitter {
 		return reply;
 	}
 
-	play(song, callback) {
+	async play(song, callback) {
 		let reply = '';
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:
 			this._addToQueue(song);
-			this._playNextSong();
+			await this._playNextSong();
 			reply = 'Playing: ' + this.m_current_song.title;
 			break;
 		case AudioPlayerStatus.Playing:
@@ -155,14 +176,14 @@ class AudioManager extends EventEmitter {
 		}
 	}
 
-	playPlaylist(playlist, callback) {
+	async playPlaylist(playlist, callback) {
 		let reply = '';
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:
 			for (const song of playlist) {
 				this._addToQueue(song);
 			}
-			this._playNextSong();
+			await this._playNextSong();
 			reply = 'Playing: ' + this.m_current_song.title;
 			break;
 		case AudioPlayerStatus.Playing:
@@ -179,7 +200,7 @@ class AudioManager extends EventEmitter {
 		}
 	}
 
-	skip(count, callback) {
+	async skip(count, callback) {
 		let reply = '';
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:
@@ -189,10 +210,10 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Paused:
 		case AudioPlayerStatus.Buffering:
 			if (count) {
-				this._playNextSong(count);
+				await this._playNextSong(count);
 			}
 			else {
-				this._playNextSong();
+				await this._playNextSong();
 			}
 			if (this.m_current_song) {
 				reply = 'Now playing: ' + this.m_current_song.title;
@@ -207,7 +228,7 @@ class AudioManager extends EventEmitter {
 		}
 	}
 
-	skipTo(id, title, callback) {
+	async skipTo(id, title, callback) {
 		let reply = '';
 		let songs = [];
 		switch (this.m_player.state.status) {
@@ -227,11 +248,31 @@ class AudioManager extends EventEmitter {
 					reply = 'Song not in queue.';
 				}
 				else {
-					this._playNextSong(this.m_queue.indexOfFirst(songs[0]) + 1);
+					await this._playNextSong(this.m_queue.indexOfFirst(songs[0]) + 1);
 					reply = 'Now playing: ' + this.m_current_song.title;
 				}
 				break;
 			}
+		}
+		if (callback) {
+			callback(reply);
+		}
+	}
+
+	async seek(time, callback) {
+		let reply = '';
+		let resource = null;
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			reply = 'Nothing is playing.';
+			break;
+		case AudioPlayerStatus.Playing:
+		case AudioPlayerStatus.Paused:
+		case AudioPlayerStatus.Buffering:
+			resource = await this._createResource(this.m_current_song.url, { seek: time });
+			await this._playAsync(resource);
+			reply = 'Playing: ' + this.m_current_song.title + ' at ' + time + ' seconds.';
+			break;
 		}
 		if (callback) {
 			callback(reply);
