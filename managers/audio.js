@@ -25,6 +25,8 @@ class AudioManager extends EventEmitter {
 		this.m_player = createAudioPlayer();
 		this.m_queue = new Queue();
 		this.m_current_song = null;
+		this.m_start_time = 0;
+		this.m_last_seek = 0;
 		this.m_repeat_song = false;
 		this.m_player.on(AudioPlayerStatus.Idle, async () => {
 			await this._playNextSong();
@@ -65,11 +67,13 @@ class AudioManager extends EventEmitter {
 	}
 
 	async _playNextSong(count = 1) {
+		this.m_last_seek = 0;
 		if (this.m_repeat_song) {
 			const url = this.m_current_song.url;
 			const options = {};
 			const resource = this._createResource(url, options);
 			await this._playAsync(resource);
+			this.m_start_time = Date.now();
 			return;
 		}
 		for (let i = 0; i < count; i++) {
@@ -82,6 +86,7 @@ class AudioManager extends EventEmitter {
 			const resource = song.resource;
 			this.m_current_song = song;
 			await this._playAsync(resource);
+			this.m_start_time = Date.now();
 		}
 	}
 
@@ -103,6 +108,15 @@ class AudioManager extends EventEmitter {
 			reply += `${i + 1}. ${this.m_queue.get(i).title}\n`;
 		}
 		return reply;
+	}
+
+	_calculateElapsedTime(offset) {
+		if (!this.m_current_song || !this.m_start_time) {
+			return 0;
+		}
+		const now = Date.now();
+		const elapsedTime = (now - this.m_start_time) / 1000 + offset;
+		return elapsedTime;
 	}
 
 	async play(song, callback) {
@@ -269,6 +283,8 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Playing:
 		case AudioPlayerStatus.Paused:
 		case AudioPlayerStatus.Buffering:
+			this.m_last_seek = time;
+			this.m_start_time = Date.now();
 			resource = await this._createResource(this.m_current_song.url, { seek: time });
 			await this._playAsync(resource);
 			reply = 'Playing: ' + this.m_current_song.title + ' at ' + time + ' seconds.';
@@ -403,6 +419,29 @@ class AudioManager extends EventEmitter {
 			else {
 				reply = 'Nothing is playing.';
 			}
+		}
+		return reply;
+	}
+
+	getSongInfo() {
+		let reply = '';
+		const elapsed = this._calculateElapsedTime(this.m_last_seek);
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			reply = 'Nothing is playing.';
+			break;
+		case AudioPlayerStatus.Playing:
+		case AudioPlayerStatus.Paused:
+		case AudioPlayerStatus.Buffering:
+			if (this.m_current_song) {
+				reply = 'Title: ' + this.m_current_song.title + '\n';
+				reply += 'Artist: ' + this.m_current_song.artist + '\n';
+				reply += 'Time elapsed: ' + elapsed + ' seconds.' + '\n';
+			}
+			else {
+				reply = 'Nothing is playing.';
+			}
+			break;
 		}
 		return reply;
 	}

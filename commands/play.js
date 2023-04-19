@@ -43,6 +43,7 @@ module.exports = {
 				await interaction.editReply('Song not found.');
 				return;
 			}
+			console.log(video);
 			const song = await createSongFromVideo(video);
 			if (!song) {
 				await interaction.editReply('Song not found.');
