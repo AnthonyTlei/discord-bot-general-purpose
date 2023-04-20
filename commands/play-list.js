@@ -35,7 +35,7 @@ module.exports = {
 			const parsedData = JSON.parse(data);
 			const songs = [];
 			// TODO: Make this a command argument. (Discord options)
-			const playlist = parsedData.song;
+			const playlist = parsedData.mood;
 			for (const entry of playlist) {
 				const song = await createSongFromJSON(entry);
 				songs.push(song);

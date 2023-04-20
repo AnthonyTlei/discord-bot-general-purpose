@@ -112,18 +112,19 @@ class AudioManager extends EventEmitter {
 			this.m_start_time = Date.now();
 			return;
 		}
+		let song = null;
 		for (let i = 0; i < count; i++) {
 			if (this.m_queue.isEmpty) {
 				this.m_player.stop();
 				this.m_current_song = null;
 				return;
 			}
-			const song = this.m_queue.dequeue();
-			const resource = song.resource;
-			this.m_current_song = song;
-			await this._playAsync(resource);
-			this.m_start_time = Date.now();
+			song = this.m_queue.dequeue();
 		}
+		const resource = song.resource;
+		this.m_current_song = song;
+		await this._playAsync(resource);
+		this.m_start_time = Date.now();
 	}
 
 	async _spotifyFactory(trackInfo) {
@@ -278,6 +279,7 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Paused:
 		case AudioPlayerStatus.Buffering:
 			if (count) {
+				// TODO: Implement a "hack" to get the next song without playing it, as _playNextSong is async and skipping does not display correct message on discord until playing ends.
 				await this._playNextSong(count);
 			}
 			else {
