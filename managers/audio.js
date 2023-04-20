@@ -126,26 +126,24 @@ class AudioManager extends EventEmitter {
 		}
 	}
 
-	async _getSpotifySongs(url, callback) {
+	async _getSpotifySongs(url) {
 		let songs = [];
 		const urlType = validateSpotifyUrl(url);
 		const accessToken = await getSpotifyAccessToken();
 		if (urlType === SpotifyLinkType.INVALID) {
-			if (callback) {
-				callback('Invalid Spotify link.');
-			}
-			return;
+			throw new Error('Invalid Spotify link.');
 		}
 		if (urlType === SpotifyLinkType.TRACK) {
 			const trackId = getSpotifyTrackId(url);
 			const trackInfo = await getSpotifyTrackInfo(trackId, accessToken);
-			const song = await createSongFromTrackInfo(trackInfo, (err) => {
-				if (callback) {
-					callback(err);
-				}
-				return;
-			});
-			songs.push(song);
+			try {
+				const song = await createSongFromTrackInfo(trackInfo);
+				songs.push(song);
+			}
+			catch (error) {
+				console.error('Error:', error.message);
+				throw error;
+			}
 		}
 		else if (urlType === SpotifyLinkType.PLAYLIST) {
 			const playlistId = getSpotifyPlaylistId(url);
@@ -154,20 +152,18 @@ class AudioManager extends EventEmitter {
 				accessToken,
 			);
 			if (!playlistInfo) {
-				if (callback) {
-					callback('Error getting playlist info.');
-				}
-				return;
+				throw new Error('Error getting playlist info.');
 			}
 			songs = await Promise.all(
 				playlistInfo.tracks.items.map(async (item) => {
-					const song = await createSongFromTrackInfo(item.track, (err) => {
-						if (callback) {
-							callback(err);
-						}
-						return;
-					});
-					return song;
+					try {
+						const song = await createSongFromTrackInfo(item.track);
+						return song;
+					}
+					catch (error) {
+						console.error('Error:', error.message);
+						throw error;
+					}
 				}),
 			);
 			if (!songs) {
@@ -176,30 +172,43 @@ class AudioManager extends EventEmitter {
 		}
 		else if (urlType === SpotifyLinkType.ALBUM) {
 			// TODO: Implement playlist support.
-			if (callback) {
-				callback('Album support is not implemented yet.');
-			}
-			return;
+			throw new Error('Albums are yet to be implemented.');
 		}
 		return songs;
 	}
+
+	// async _getYoutubeSongs(url, callback) {
+
+	// }
 
 	async play(url, preview, callback) {
 		let reply = '';
 		let songs = [];
 		// TODO : verify link source (youtube/spotify) to support both.
 		if (preview) {
-			songs = await this._getSpotifySongs(url, (err) => {
+			try {
+				songs = await this._getSpotifySongs(url);
+			}
+			catch (error) {
+				console.error('Error:', error.message);
 				if (callback) {
-					callback(err);
+					callback(error.message);
 				}
 				return;
-			});
+			}
 		}
 		else {
-			// TODO: Implement spotify url to youtube url conversion.
-			reply = 'Youtube support is not implemented yet.';
-			return;
+			// TODO : Implement youtube support.
+			try {
+				songs = await this._getYoutubeSongs(url);
+			}
+			catch (error) {
+				console.error('Error:', error.message);
+				if (callback) {
+					callback(error.message);
+				}
+				return;
+			}
 		}
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:

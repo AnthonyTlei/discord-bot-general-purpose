@@ -95,18 +95,12 @@ const getSpotifyPlaylistId = (link) => {
 	return match ? match[1] : null;
 };
 
-const createSongFromTrackInfo = (trackInfo, callback) => {
+const createSongFromTrackInfo = (trackInfo) => {
 	if (!trackInfo) {
-		if (callback) {
-			callback('Song not found.');
-		}
-		return null;
+		throw new Error('Song not found');
 	}
 	if (!trackInfo.preview_url) {
-		if (callback) {
-			callback('No preview available for this song.');
-		}
-		return null;
+		throw new Error('No preview available for this song.');
 	}
 	const title = trackInfo.name;
 	const artist = trackInfo.artists[0].name;
