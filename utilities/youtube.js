@@ -21,11 +21,11 @@ const getYouTubeVideoInfo = async (query) => {
 	}
 	catch (error) {
 		console.error('Error getting YouTube video info:', error);
-		return null;
+		throw error;
 	}
 };
 
-const createStreamFromURL = async (url, options) => {
+const createResourceFromURL = async (url, options) => {
 	try {
 		const stream = await ytdl(url, {
 			filter: 'audioonly',
@@ -38,17 +38,6 @@ const createStreamFromURL = async (url, options) => {
 		stream.on('error', (error) => {
 			console.error('Error in audio stream:', error);
 		});
-		return stream;
-	}
-	catch (error) {
-		console.error('Error creating Youtube video stream:', error);
-		return null;
-	}
-};
-
-const createResourceFromURL = async (url, options) => {
-	try {
-		const stream = await createStreamFromURL(url, options);
 		return createAudioResource(stream);
 	}
 	catch (error) {
@@ -57,7 +46,7 @@ const createResourceFromURL = async (url, options) => {
 	}
 };
 
-const createSongFromVideo = async (video) => {
+const createSongFromVideoInfo = async (video) => {
 	try {
 		const title = video.snippet.title;
 		const artist = video.snippet.channelTitle;
@@ -68,7 +57,7 @@ const createSongFromVideo = async (video) => {
 	}
 	catch (error) {
 		console.error('Error creating song from YouTube video:', error);
-		return null;
+		return error;
 	}
 };
 
@@ -82,7 +71,7 @@ const createSongFromJSON = async (song) => {
 		return new Song(resource, title, artist, url, type);
 	}
 	catch (error) {
-		console.error('Error creating song from YouTube video:', error);
+		console.error('Error creating song from YouTube JSON:', error);
 		return null;
 	}
 };
@@ -90,7 +79,6 @@ const createSongFromJSON = async (song) => {
 module.exports = {
 	createResourceFromURL,
 	createSongFromJSON,
-	createSongFromVideo,
-	createStreamFromURL,
+	createSongFromVideoInfo,
 	getYouTubeVideoInfo,
 };

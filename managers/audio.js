@@ -2,7 +2,7 @@ const { createAudioPlayer, AudioPlayerStatus } = require('@discordjs/voice');
 const { EventEmitter } = require('events');
 const { getLyrics } = require('../utilities/genius.js');
 const Queue = require('../utilities/queue.js');
-const { createResourceFromURL } = require('../utilities/youtube.js');
+const { createResourceFromURL, getYouTubeVideoInfo, createSongFromVideoInfo } = require('../utilities/youtube.js');
 const {
 	getSpotifyTrackInfo,
 	getSpotifyTrackId,
@@ -126,7 +126,19 @@ class AudioManager extends EventEmitter {
 		}
 	}
 
-	async _getSpotifySongs(url) {
+	async _spotifyFactory(trackInfo) {
+		const song = await createSongFromTrackInfo(trackInfo);
+		return song;
+	}
+
+	async _youtubeFactory(trackInfo) {
+		const query = trackInfo.name + ' ' + trackInfo.artists[0].name;
+		const video = await getYouTubeVideoInfo(query);
+		const song = await createSongFromVideoInfo(video);
+		return song;
+	}
+
+	async _getSpotifySongs(url, songFactory) {
 		let songs = [];
 		const urlType = validateSpotifyUrl(url);
 		const accessToken = await getSpotifyAccessToken();
@@ -136,14 +148,8 @@ class AudioManager extends EventEmitter {
 		if (urlType === SpotifyLinkType.TRACK) {
 			const trackId = getSpotifyTrackId(url);
 			const trackInfo = await getSpotifyTrackInfo(trackId, accessToken);
-			try {
-				const song = await createSongFromTrackInfo(trackInfo);
-				songs.push(song);
-			}
-			catch (error) {
-				console.error('Error:', error.message);
-				throw error;
-			}
+			const song = await songFactory(trackInfo);
+			songs.push(song);
 		}
 		else if (urlType === SpotifyLinkType.PLAYLIST) {
 			const playlistId = getSpotifyPlaylistId(url);
@@ -156,14 +162,8 @@ class AudioManager extends EventEmitter {
 			}
 			songs = await Promise.all(
 				playlistInfo.tracks.items.map(async (item) => {
-					try {
-						const song = await createSongFromTrackInfo(item.track);
-						return song;
-					}
-					catch (error) {
-						console.error('Error:', error.message);
-						throw error;
-					}
+					const song = await songFactory(item.track);
+					return song;
 				}),
 			);
 			if (!songs) {
@@ -177,17 +177,13 @@ class AudioManager extends EventEmitter {
 		return songs;
 	}
 
-	// async _getYoutubeSongs(url, callback) {
-
-	// }
-
 	async play(url, preview, callback) {
 		let reply = '';
 		let songs = [];
 		// TODO : verify link source (youtube/spotify) to support both.
 		if (preview) {
 			try {
-				songs = await this._getSpotifySongs(url);
+				songs = await this._getSpotifySongs(url, this._spotifyFactory);
 			}
 			catch (error) {
 				console.error('Error:', error.message);
@@ -198,12 +194,10 @@ class AudioManager extends EventEmitter {
 			}
 		}
 		else {
-			// TODO : Implement youtube support.
 			try {
-				songs = await this._getYoutubeSongs(url);
+				songs = await this._getSpotifySongs(url, this._youtubeFactory);
 			}
 			catch (error) {
-				console.error('Error:', error.message);
 				if (callback) {
 					callback(error.message);
 				}
@@ -235,16 +229,17 @@ class AudioManager extends EventEmitter {
 
 	async playSong(song, callback) {
 		let reply = '';
+		const songs = [song];
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:
-			this._addToQueue(song);
+			this._addToQueue(songs);
 			await this._playNextSong();
 			reply = 'Playing: ' + this.m_current_song.title;
 			break;
 		case AudioPlayerStatus.Playing:
 		case AudioPlayerStatus.Paused:
 		case AudioPlayerStatus.Buffering:
-			this._addToQueue(song);
+			this._addToQueue(songs);
 			reply = 'Added to queue: ' + song.title;
 			break;
 		}
@@ -257,18 +252,14 @@ class AudioManager extends EventEmitter {
 		let reply = '';
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:
-			for (const song of playlist) {
-				this._addToQueue(song);
-			}
+			this._addToQueue(playlist);
 			await this._playNextSong();
 			reply = 'Playing: ' + this.m_current_song.title;
 			break;
 		case AudioPlayerStatus.Playing:
 		case AudioPlayerStatus.Paused:
 		case AudioPlayerStatus.Buffering:
-			for (const song of playlist) {
-				this._addToQueue(song);
-			}
+			this._addToQueue(playlist);
 			reply = 'Added to queue: ' + playlist.length + ' songs.';
 			break;
 		}

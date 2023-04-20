@@ -3,7 +3,7 @@ const { joinVoiceChannel } = require('@discordjs/voice');
 const { AudioManager, AudioManagerEvents } = require('../managers/audio.js');
 const {
 	getYouTubeVideoInfo,
-	createSongFromVideo,
+	createSongFromVideoInfo,
 } = require('../utilities/youtube.js');
 
 const manager = new AudioManager();
@@ -16,7 +16,14 @@ module.exports = {
 			option
 				.setName('query')
 				.setDescription('The query to search for.')
-				.setRequired(true)
+				.setRequired(false)
+				.setMaxLength(2000),
+		)
+		.addStringOption((option) =>
+			option
+				.setName('link')
+				.setDescription('The Link of the Spotify track/playlist to play.')
+				.setRequired(false)
 				.setMaxLength(2000),
 		),
 	async execute(interaction) {
@@ -37,23 +44,34 @@ module.exports = {
 				await interaction.editReply('Failed to join voice channel.');
 				return;
 			}
+			const link = interaction.options.getString('link');
 			const query = interaction.options.getString('query');
-			const video = await getYouTubeVideoInfo(query);
-			if (!video) {
-				await interaction.editReply('Song not found.');
+			if (!link && !query) {
+				await interaction.editReply('One of the parameters must be provided.');
 				return;
 			}
-			console.log(video);
-			const song = await createSongFromVideo(video);
-			if (!song) {
-				await interaction.editReply('Song not found.');
+			if (link) {
+				await manager.play(link, false, (reply) => interaction.editReply(reply));
+			}
+			else if (query) {
+				const video = await getYouTubeVideoInfo(query);
+				if (!video) {
+					await interaction.editReply('Song not found.');
+					return;
+				}
+				const song = await createSongFromVideoInfo(video);
+				if (!song) {
+					await interaction.editReply('Song not found.');
+					return;
+				}
+				// TODO: Upgrade to .play()
+				await manager.playSong(song, (reply) => interaction.editReply(reply));
 				return;
 			}
-			await manager.play(song, (reply) => interaction.editReply(reply));
 			connection.subscribe(manager.player);
 			await manager.on(AudioManagerEvents.ERROR, (error) => {
-				console.error('Error in AudioManager:', error);
 				// TODO: Make the message more descriptive. And display it last?
+				console.error('Error playing song:', error);
 				interaction.editReply('Error playing song. Moving to next song.');
 			});
 		}
