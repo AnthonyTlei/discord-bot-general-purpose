@@ -73,7 +73,7 @@ const getSpotifyPlaylistInfo = async (playlistId, accessToken) => {
 	}
 };
 
-const validateSpotifyLink = (link) => {
+const validateSpotifyUrl = (link) => {
 	if (trackRegex.test(link)) {
 		return SpotifyLinkType.TRACK;
 	}
@@ -96,15 +96,21 @@ const getSpotifyPlaylistId = (link) => {
 };
 
 const createSongFromTrackInfo = (trackInfo, callback) => {
-	const title = trackInfo.name;
-	const artist = trackInfo.artists[0].name;
-	const type = SpotifyLinkType.SPOTIFY;
+	if (!trackInfo) {
+		if (callback) {
+			callback('Song not found.');
+		}
+		return null;
+	}
 	if (!trackInfo.preview_url) {
 		if (callback) {
 			callback('No preview available for this song.');
 		}
 		return null;
 	}
+	const title = trackInfo.name;
+	const artist = trackInfo.artists[0].name;
+	const type = SpotifyLinkType.SPOTIFY;
 	const url = trackInfo.preview_url;
 	const resource = createAudioResource(trackInfo.preview_url);
 	return new Song(resource, title, artist, url, type);
@@ -118,5 +124,5 @@ module.exports = {
 	getSpotifyTrackId,
 	getSpotifyTrackInfo,
 	SpotifyLinkType,
-	validateSpotifyLink,
+	validateSpotifyUrl,
 };

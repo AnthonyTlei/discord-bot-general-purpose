@@ -1,12 +1,18 @@
-const {
-	createAudioPlayer,
-	AudioPlayerStatus,
-} = require('@discordjs/voice');
+const { createAudioPlayer, AudioPlayerStatus } = require('@discordjs/voice');
 const { EventEmitter } = require('events');
 const { getLyrics } = require('../utilities/genius.js');
 const Queue = require('../utilities/queue.js');
 const { createResourceFromURL } = require('../utilities/youtube.js');
-
+const {
+	getSpotifyTrackInfo,
+	getSpotifyTrackId,
+	getSpotifyAccessToken,
+	createSongFromTrackInfo,
+	SpotifyLinkType,
+	validateSpotifyUrl,
+	getSpotifyPlaylistInfo,
+	getSpotifyPlaylistId,
+} = require('../utilities/spotify.js');
 const AudioManagerEvents = {
 	ERROR: 'error',
 };
@@ -37,8 +43,10 @@ class AudioManager extends EventEmitter {
 		});
 	}
 
-	_addToQueue(song) {
-		this.m_queue.enqueue(song);
+	_addToQueue(songs) {
+		for (const song of songs) {
+			this.m_queue.enqueue(song);
+		}
 	}
 
 	_createResource(url, options = {}) {
@@ -47,47 +55,6 @@ class AudioManager extends EventEmitter {
 
 	_play(resource) {
 		this.m_player.play(resource);
-	}
-
-	async _playAsync(resource) {
-		return new Promise((resolve, reject) => {
-			this.m_player.play(resource);
-			this.m_player.on(AudioPlayerStatus.Idle, () => {
-				resolve(AudioPlayerStatus.Idle);
-			});
-			this.m_player.on(AudioPlayerStatus.Playing, () => {
-				resolve(AudioPlayerStatus.Playing);
-			});
-			// TODO : Consider implementing a timeout later on for Buffering time.
-			this.m_player.on('error', (error) => {
-				reject(error);
-			});
-		},
-		);
-	}
-
-	async _playNextSong(count = 1) {
-		this.m_last_seek = 0;
-		if (this.m_repeat_song) {
-			const url = this.m_current_song.url;
-			const options = {};
-			const resource = this._createResource(url, options);
-			await this._playAsync(resource);
-			this.m_start_time = Date.now();
-			return;
-		}
-		for (let i = 0; i < count; i++) {
-			if (this.m_queue.isEmpty) {
-				this.m_player.stop();
-				this.m_current_song = null;
-				return;
-			}
-			const song = this.m_queue.dequeue();
-			const resource = song.resource;
-			this.m_current_song = song;
-			await this._playAsync(resource);
-			this.m_start_time = Date.now();
-		}
 	}
 
 	_parseQueue() {
@@ -119,7 +86,145 @@ class AudioManager extends EventEmitter {
 		return elapsedTime;
 	}
 
-	async play(song, callback) {
+	async _playAsync(resource) {
+		return new Promise((resolve, reject) => {
+			this._play(resource);
+			this.m_player.on(AudioPlayerStatus.Idle, () => {
+				resolve(AudioPlayerStatus.Idle);
+			});
+			this.m_player.on(AudioPlayerStatus.Playing, () => {
+				resolve(AudioPlayerStatus.Playing);
+			});
+			// TODO : Consider implementing a timeout later on for Buffering time.
+			this.m_player.on('error', (error) => {
+				reject(error);
+			});
+		});
+	}
+
+	async _playNextSong(count = 1) {
+		this.m_last_seek = 0;
+		if (this.m_repeat_song) {
+			const url = this.m_current_song.url;
+			const options = {};
+			const resource = this._createResource(url, options);
+			await this._playAsync(resource);
+			this.m_start_time = Date.now();
+			return;
+		}
+		for (let i = 0; i < count; i++) {
+			if (this.m_queue.isEmpty) {
+				this.m_player.stop();
+				this.m_current_song = null;
+				return;
+			}
+			const song = this.m_queue.dequeue();
+			const resource = song.resource;
+			this.m_current_song = song;
+			await this._playAsync(resource);
+			this.m_start_time = Date.now();
+		}
+	}
+
+	async _getSpotifySongs(url, callback) {
+		let songs = [];
+		const urlType = validateSpotifyUrl(url);
+		const accessToken = await getSpotifyAccessToken();
+		if (urlType === SpotifyLinkType.INVALID) {
+			if (callback) {
+				callback('Invalid Spotify link.');
+			}
+			return;
+		}
+		if (urlType === SpotifyLinkType.TRACK) {
+			const trackId = getSpotifyTrackId(url);
+			const trackInfo = await getSpotifyTrackInfo(trackId, accessToken);
+			const song = await createSongFromTrackInfo(trackInfo, (err) => {
+				if (callback) {
+					callback(err);
+				}
+				return;
+			});
+			songs.push(song);
+		}
+		else if (urlType === SpotifyLinkType.PLAYLIST) {
+			const playlistId = getSpotifyPlaylistId(url);
+			const playlistInfo = await getSpotifyPlaylistInfo(
+				playlistId,
+				accessToken,
+			);
+			if (!playlistInfo) {
+				if (callback) {
+					callback('Error getting playlist info.');
+				}
+				return;
+			}
+			songs = await Promise.all(
+				playlistInfo.tracks.items.map(async (item) => {
+					const song = await createSongFromTrackInfo(item.track, (err) => {
+						if (callback) {
+							callback(err);
+						}
+						return;
+					});
+					return song;
+				}),
+			);
+			if (!songs) {
+				return;
+			}
+		}
+		else if (urlType === SpotifyLinkType.ALBUM) {
+			// TODO: Implement playlist support.
+			if (callback) {
+				callback('Album support is not implemented yet.');
+			}
+			return;
+		}
+		return songs;
+	}
+
+	async play(url, preview, callback) {
+		let reply = '';
+		let songs = [];
+		// TODO : verify link source (youtube/spotify) to support both.
+		if (preview) {
+			songs = await this._getSpotifySongs(url, (err) => {
+				if (callback) {
+					callback(err);
+				}
+				return;
+			});
+		}
+		else {
+			// TODO: Implement spotify url to youtube url conversion.
+			reply = 'Youtube support is not implemented yet.';
+			return;
+		}
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			this._addToQueue(songs);
+			await this._playNextSong();
+			reply = 'Playing: ' + this.m_current_song.title;
+			break;
+		case AudioPlayerStatus.Playing:
+		case AudioPlayerStatus.Paused:
+		case AudioPlayerStatus.Buffering:
+			this._addToQueue(songs);
+			if (songs.length === 1) {
+				reply = 'Added to queue: ' + songs[0].title;
+			}
+			else {
+				reply = 'Added to queue: ' + songs.length + ' songs.';
+			}
+			break;
+		}
+		if (callback) {
+			callback(reply);
+		}
+	}
+
+	async playSong(song, callback) {
 		let reply = '';
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:
@@ -136,57 +241,6 @@ class AudioManager extends EventEmitter {
 		}
 		if (callback) {
 			callback(reply);
-		}
-	}
-
-	remove(id, title, exact, all, callback) {
-		let reply = '';
-		if (this.m_queue.isEmpty) {
-			reply = 'The queue is empty.';
-			if (callback) {
-				callback(reply);
-			}
-			return;
-		}
-		if (id) {
-			const song = this.m_queue.remove(id - 1);
-			if (song) {
-				reply = 'Removed: ' + song.title;
-			}
-			else {
-				reply = 'No song found with that ID.';
-			}
-			if (callback) {
-				callback(reply);
-			}
-			return;
-		}
-		else if (title) {
-			const songs = this.m_queue.removeByQuery(title, exact, all);
-			if (songs.length == 1) {
-				reply = 'Removed: ' + songs[0].title;
-			}
-			else if (songs.length > 1) {
-				reply = 'Removed: \n';
-				for (const song of songs) {
-					reply += song.title + '\n';
-				}
-			}
-			else {
-				reply = 'No songs removed.';
-			}
-			if (callback) {
-				callback(reply);
-			}
-			return;
-		}
-		else {
-			const song = this.m_queue.remove(0);
-			reply = 'Removed: ' + song.title;
-			if (callback) {
-				callback(reply);
-			}
-			return;
 		}
 	}
 
@@ -285,13 +339,87 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Buffering:
 			this.m_last_seek = time;
 			this.m_start_time = Date.now();
-			resource = await this._createResource(this.m_current_song.url, { seek: time });
+			resource = await this._createResource(this.m_current_song.url, {
+				seek: time,
+			});
 			await this._playAsync(resource);
-			reply = 'Playing: ' + this.m_current_song.title + ' at ' + time + ' seconds.';
+			reply =
+          'Playing: ' + this.m_current_song.title + ' at ' + time + ' seconds.';
 			break;
 		}
 		if (callback) {
 			callback(reply);
+		}
+	}
+
+	async lyrics() {
+		let reply = '';
+		switch (this.m_player.state.status) {
+		case AudioPlayerStatus.Idle:
+			reply = 'Nothing is playing.';
+			break;
+		case AudioPlayerStatus.Playing:
+		case AudioPlayerStatus.Paused:
+		case AudioPlayerStatus.Buffering:
+			if (this.m_current_song) {
+				reply = 'Lyrics for: ' + this.m_current_song.title + '\n\n';
+				reply += await getLyrics(this.m_current_song);
+			}
+			else {
+				reply = 'Nothing is playing.';
+			}
+		}
+		return reply;
+	}
+
+	remove(id, title, exact, all, callback) {
+		let reply = '';
+		if (this.m_queue.isEmpty) {
+			reply = 'The queue is empty.';
+			if (callback) {
+				callback(reply);
+			}
+			return;
+		}
+		if (id) {
+			const song = this.m_queue.remove(id - 1);
+			if (song) {
+				reply = 'Removed: ' + song.title;
+			}
+			else {
+				reply = 'No song found with that ID.';
+			}
+			if (callback) {
+				callback(reply);
+			}
+			return;
+		}
+		else if (title) {
+			const songs = this.m_queue.removeByQuery(title, exact, all);
+			if (songs.length == 1) {
+				reply = 'Removed: ' + songs[0].title;
+			}
+			else if (songs.length > 1) {
+				reply = 'Removed: \n';
+				for (const song of songs) {
+					reply += song.title + '\n';
+				}
+			}
+			else {
+				reply = 'No songs removed.';
+			}
+			if (callback) {
+				callback(reply);
+			}
+			return;
+		}
+		else {
+			const song = this.m_queue.remove(0);
+			reply = 'Removed: ' + song.title;
+			if (callback) {
+				callback(reply);
+			}
+			return;
 		}
 	}
 
@@ -401,26 +529,6 @@ class AudioManager extends EventEmitter {
 		if (callback) {
 			callback(reply);
 		}
-	}
-
-	async lyrics() {
-		let reply = '';
-		switch (this.m_player.state.status) {
-		case AudioPlayerStatus.Idle:
-			reply = 'Nothing is playing.';
-			break;
-		case AudioPlayerStatus.Playing:
-		case AudioPlayerStatus.Paused:
-		case AudioPlayerStatus.Buffering:
-			if (this.m_current_song) {
-				reply = 'Lyrics for: ' + this.m_current_song.title + '\n\n';
-				reply += await getLyrics(this.m_current_song);
-			}
-			else {
-				reply = 'Nothing is playing.';
-			}
-		}
-		return reply;
 	}
 
 	getSongInfo() {
