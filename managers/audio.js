@@ -172,7 +172,7 @@ class AudioManager extends EventEmitter {
 			}
 		}
 		else if (urlType === SpotifyLinkType.ALBUM) {
-			// TODO: Implement playlist support.
+			// TODO: Implement Album support.
 			throw new Error('Albums are yet to be implemented.');
 		}
 		return songs;

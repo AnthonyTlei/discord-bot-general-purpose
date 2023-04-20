@@ -3,8 +3,6 @@ const { SlashCommandBuilder } = require('discord.js');
 const { AudioManager } = require('../managers/audio.js');
 const manager = new AudioManager();
 
-// TODO: add skipTo ID.
-
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('skip-to')
