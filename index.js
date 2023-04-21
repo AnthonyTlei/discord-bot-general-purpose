@@ -1,11 +1,12 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const args = process.argv.slice(2);
-const deployTarget = args[0] || '';
+const commandArgs = process.argv.slice(2);
+const deployTarget = commandArgs[0] || '';
 
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
+const { startClock } = require('./utilities/clock');
 
 function walk(dir, callback, subfolder = '') {
 	fs.readdirSync(dir).forEach((f) => {
@@ -76,3 +77,4 @@ for (const file of eventFiles) {
 }
 
 client.login(token);
+startClock();
