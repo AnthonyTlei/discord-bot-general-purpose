@@ -314,9 +314,8 @@ class AudioManager extends EventEmitter {
 		}
 	}
 
-	async playSong(song, callback) {
+	async playSongs(songs, callback) {
 		let reply = '';
-		const songs = [song];
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:
 			this._addToQueue(songs);
@@ -327,27 +326,7 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Paused:
 		case AudioPlayerStatus.Buffering:
 			this._addToQueue(songs);
-			reply = 'Added to queue: ' + song.title;
-			break;
-		}
-		if (callback) {
-			callback(reply);
-		}
-	}
-
-	async playPlaylist(playlist, callback) {
-		let reply = '';
-		switch (this.m_player.state.status) {
-		case AudioPlayerStatus.Idle:
-			this._addToQueue(playlist);
-			await this._playNextSong();
-			reply = 'Playing: ' + this.m_current_song.title;
-			break;
-		case AudioPlayerStatus.Playing:
-		case AudioPlayerStatus.Paused:
-		case AudioPlayerStatus.Buffering:
-			this._addToQueue(playlist);
-			reply = 'Added to queue: ' + playlist.length + ' songs.';
+			reply = 'Added to queue: ' + songs.length + ' songs.';
 			break;
 		}
 		if (callback) {

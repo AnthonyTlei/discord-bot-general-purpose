@@ -34,13 +34,13 @@ module.exports = {
 			const data = fs.readFileSync(playlistsPath, 'utf8');
 			const parsedData = JSON.parse(data);
 			const songs = [];
-			// TODO: Make this a command argument. (Discord options)
+			// TODO: Make this a command argument. (Discord choices)
 			const playlist = parsedData.mood;
 			for (const entry of playlist) {
 				const song = await createSongFromJSON(entry);
 				songs.push(song);
 			}
-			await manager.playPlaylist(songs, (reply) =>
+			await manager.playSongs(songs, (reply) =>
 				interaction.editReply(reply),
 			);
 			connection.subscribe(manager.player);
