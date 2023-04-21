@@ -1,12 +1,12 @@
 const { SlashCommandBuilder } = require('discord.js');
 
-const { AudioManager } = require('../managers/audio.js');
+const { AudioManager } = require('../../managers/audio.js');
 const manager = new AudioManager();
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('song')
-		.setDescription('Displays information about the currently playing song.'),
+		.setName('queue')
+		.setDescription('Displays Queue information.'),
 	async execute(interaction) {
 		try {
 			await interaction.deferReply();
@@ -16,11 +16,11 @@ module.exports = {
 				);
 				return;
 			}
-			const reply = manager.getSongInfo();
+			const reply = manager._parseQueue();
 			await interaction.editReply(reply);
 		}
 		catch (error) {
-			console.error('Error executing song command:', error);
+			console.error('Error executing queu command:', error);
 		}
 	},
 };

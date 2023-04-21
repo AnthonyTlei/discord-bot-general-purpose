@@ -126,7 +126,6 @@ const createResourceFromURL = async (url, options) => {
 };
 
 const createSongFromVideoInfo = async (video) => {
-	console.log(video);
 	try {
 		const title = video.snippet.title;
 		const artist = video.snippet.channelTitle;

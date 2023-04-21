@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
 
-const { AudioManager } = require('../managers/audio.js');
+const { AudioManager } = require('../../managers/audio.js');
 const manager = new AudioManager();
 
 module.exports = {

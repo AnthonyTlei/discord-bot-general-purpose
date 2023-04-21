@@ -1,12 +1,11 @@
 const { SlashCommandBuilder } = require('discord.js');
-
-const { AudioManager } = require('../managers/audio.js');
+const { AudioManager } = require('../../managers/audio.js');
 const manager = new AudioManager();
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('stop')
-		.setDescription('Stops the Audio Player, clears the queue.'),
+		.setName('lyrics')
+		.setDescription('Displays lyrics of currently playing song.'),
 	async execute(interaction) {
 		try {
 			await interaction.deferReply();
@@ -16,10 +15,11 @@ module.exports = {
 				);
 				return;
 			}
-			await manager.stop((reply) => interaction.editReply(reply));
+			const response = await manager.lyrics();
+			await interaction.editReply(response);
 		}
 		catch (error) {
-			console.error('Error executing stop command:', error);
+			console.error('Error executing lyrics command:', error);
 		}
 	},
 };

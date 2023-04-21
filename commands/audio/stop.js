@@ -1,12 +1,12 @@
 const { SlashCommandBuilder } = require('discord.js');
 
-const { AudioManager } = require('../managers/audio.js');
+const { AudioManager } = require('../../managers/audio.js');
 const manager = new AudioManager();
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('shuffle')
-		.setDescription('Shuffles the queue.'),
+		.setName('stop')
+		.setDescription('Stops the Audio Player, clears the queue.'),
 	async execute(interaction) {
 		try {
 			await interaction.deferReply();
@@ -16,10 +16,10 @@ module.exports = {
 				);
 				return;
 			}
-			await manager.shuffle((reply) => interaction.editReply(reply));
+			await manager.stop((reply) => interaction.editReply(reply));
 		}
 		catch (error) {
-			console.error('Error executing shuffle command:', error);
+			console.error('Error executing stop command:', error);
 		}
 	},
 };

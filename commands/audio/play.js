@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
-const { AudioManager, AudioManagerEvents } = require('../managers/audio.js');
+const { AudioManager, AudioManagerEvents } = require('../../managers/audio.js');
 
 const manager = new AudioManager();
 

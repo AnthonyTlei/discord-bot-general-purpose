@@ -1,12 +1,12 @@
 const { SlashCommandBuilder } = require('discord.js');
 
-const { AudioManager } = require('../managers/audio.js');
+const { AudioManager } = require('../../managers/audio.js');
 const manager = new AudioManager();
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('resume')
-		.setDescription('Resumes Player.'),
+		.setName('song')
+		.setDescription('Displays information about the currently playing song.'),
 	async execute(interaction) {
 		try {
 			await interaction.deferReply();
@@ -16,10 +16,11 @@ module.exports = {
 				);
 				return;
 			}
-			await manager.resume((reply) => interaction.editReply(reply));
+			const reply = manager.getSongInfo();
+			await interaction.editReply(reply);
 		}
 		catch (error) {
-			console.error('Error executing resume command:', error);
+			console.error('Error executing song command:', error);
 		}
 	},
 };

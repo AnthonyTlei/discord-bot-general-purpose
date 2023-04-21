@@ -1,12 +1,12 @@
 const { SlashCommandBuilder } = require('discord.js');
 
-const { AudioManager } = require('../managers/audio.js');
+const { AudioManager } = require('../../managers/audio.js');
 const manager = new AudioManager();
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('queue')
-		.setDescription('Displays Queue information.'),
+		.setName('pause')
+		.setDescription('Pauses Player.'),
 	async execute(interaction) {
 		try {
 			await interaction.deferReply();
@@ -16,11 +16,10 @@ module.exports = {
 				);
 				return;
 			}
-			const reply = manager._parseQueue();
-			await interaction.editReply(reply);
+			await manager.pause((reply) => interaction.editReply(reply));
 		}
 		catch (error) {
-			console.error('Error executing queu command:', error);
+			console.error('Error executing pause command:', error);
 		}
 	},
 };

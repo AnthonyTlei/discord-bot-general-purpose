@@ -1,7 +1,26 @@
 const fs = require('node:fs');
 const path = require('node:path');
+
+const args = process.argv.slice(2);
+const deployTarget = args[0] || '';
+
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
+
+function walk(dir, callback, subfolder = '') {
+	fs.readdirSync(dir).forEach((f) => {
+		const dirPath = path.join(dir, f);
+		const isDirectory = fs.statSync(dirPath).isDirectory();
+		const newSubfolder = path.join(subfolder, f);
+
+		if (isDirectory) {
+			walk(dirPath, callback, newSubfolder);
+		}
+		else {
+			callback(path.join(dir, f), newSubfolder);
+		}
+	});
+}
 
 const client = new Client({
 	intents: [
@@ -14,10 +33,18 @@ const client = new Client({
 
 client.commands = new Collection();
 
-const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs
-	.readdirSync(commandsPath)
-	.filter((file) => file.endsWith('.js'));
+let commandFiles = [];
+let commandsPath = path.join(__dirname, 'commands');
+commandsPath = path.join(commandsPath, deployTarget);
+if (!fs.existsSync(commandsPath)) {
+	console.error('commandsPath does not exist');
+	process.exit(1);
+}
+
+walk(commandsPath, (filePath, subfolder) => {
+	commandFiles.push({ filePath, subfolder });
+});
+commandFiles = commandFiles.filter((file) => file.filePath.endsWith('.js'));
 
 const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs
@@ -25,7 +52,7 @@ const eventFiles = fs
 	.filter((file) => file.endsWith('.js'));
 
 for (const file of commandFiles) {
-	const filePath = path.join(commandsPath, file);
+	const filePath = file.filePath;
 	const command = require(filePath);
 	if ('data' in command && 'execute' in command) {
 		client.commands.set(command.data.name, command);

@@ -1,12 +1,12 @@
 const { SlashCommandBuilder } = require('discord.js');
 
-const { AudioManager } = require('../managers/audio.js');
+const { AudioManager } = require('../../managers/audio.js');
 const manager = new AudioManager();
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('pause')
-		.setDescription('Pauses Player.'),
+		.setName('shuffle')
+		.setDescription('Shuffles the queue.'),
 	async execute(interaction) {
 		try {
 			await interaction.deferReply();
@@ -16,10 +16,10 @@ module.exports = {
 				);
 				return;
 			}
-			await manager.pause((reply) => interaction.editReply(reply));
+			await manager.shuffle((reply) => interaction.editReply(reply));
 		}
 		catch (error) {
-			console.error('Error executing pause command:', error);
+			console.error('Error executing shuffle command:', error);
 		}
 	},
 };
