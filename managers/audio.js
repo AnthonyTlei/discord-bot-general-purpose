@@ -86,6 +86,17 @@ class AudioManager extends EventEmitter {
 		return elapsedTime;
 	}
 
+	_getNextSongInfo(count = 1) {
+		if (this.m_repeat_song) {
+			return this.m_current_song;
+		}
+		if (this.m_queue.isEmpty) {
+			return null;
+		}
+		const song = this.m_queue.get(count - 1);
+		return song;
+	}
+
 	async _playAsync(resource) {
 		return new Promise((resolve, reject) => {
 			this._play(resource);
@@ -271,6 +282,7 @@ class AudioManager extends EventEmitter {
 
 	async skip(count, callback) {
 		let reply = '';
+		let nextSong = null;
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:
 			reply = 'Nothing is playing.';
@@ -278,23 +290,21 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Playing:
 		case AudioPlayerStatus.Paused:
 		case AudioPlayerStatus.Buffering:
-			if (count) {
-				// TODO: Implement a "hack" to get the next song without playing it, as _playNextSong is async and skipping does not display correct message on discord until playing ends.
-				await this._playNextSong(count);
+			if (!count) {
+				count = 1;
 			}
-			else {
-				await this._playNextSong();
-			}
-			if (this.m_current_song) {
-				reply = 'Now playing: ' + this.m_current_song.title;
+			nextSong = this._getNextSongInfo(count);
+			if (nextSong) {
+				reply = 'Now playing: ' + nextSong.title;
 			}
 			else {
 				reply = 'Nothing is playing.';
 			}
+			if (callback) {
+				callback(reply);
+			}
+			await this._playNextSong(count);
 			break;
-		}
-		if (callback) {
-			callback(reply);
 		}
 	}
 
@@ -318,14 +328,15 @@ class AudioManager extends EventEmitter {
 					reply = 'Song not in queue.';
 				}
 				else {
+					const nextSong = this._getNextSongInfo(this.m_queue.indexOfFirst(songs[0]) + 1);
+					reply = 'Now playing: ' + nextSong.title;
+					if (callback) {
+						callback(reply);
+					}
 					await this._playNextSong(this.m_queue.indexOfFirst(songs[0]) + 1);
-					reply = 'Now playing: ' + this.m_current_song.title;
 				}
 				break;
 			}
-		}
-		if (callback) {
-			callback(reply);
 		}
 	}
 
