@@ -406,7 +406,12 @@ class AudioManager extends EventEmitter {
 					const nextSong = this._getNextSongInfo(
 						this.m_queue.indexOfFirst(songs[0]) + 1,
 					);
-					reply = 'Now playing: ' + nextSong.title;
+					if (nextSong) {
+						reply = 'Now playing: ' + nextSong.title;
+					}
+					else {
+						reply = 'Nothing is playing.';
+					}
 					if (callback) {
 						callback(reply);
 					}
