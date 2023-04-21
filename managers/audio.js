@@ -189,9 +189,21 @@ class AudioManager extends EventEmitter {
 		return songs;
 	}
 
-	async play(url, preview, callback) {
+	async _getYoutubeSongs(query) {
+		const songs = [];
+		const video = await getYouTubeVideoInfo(query);
+		if (!video) {
+			throw Error('Song not found.');
+		}
+		const song = await createSongFromVideoInfo(video);
+		songs.push(song);
+		return songs;
+	}
+
+	async play({ url, query = '', preview = false, callback = null, ...otherOptions }) {
 		let reply = '';
 		let songs = [];
+		console.log(otherOptions);
 		// TODO : verify link source (youtube/spotify) to support both.
 		if (preview) {
 			try {
@@ -207,7 +219,15 @@ class AudioManager extends EventEmitter {
 		}
 		else {
 			try {
-				songs = await this._getSpotifySongs(url, this._youtubeFactory);
+				if (url) {
+					songs = await this._getSpotifySongs(url, this._youtubeFactory);
+				}
+				else if (query) {
+					songs = await this._getYoutubeSongs(query);
+				}
+				else {
+					throw new Error('No URL or query provided.');
+				}
 			}
 			catch (error) {
 				if (callback) {

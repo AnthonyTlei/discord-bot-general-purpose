@@ -51,22 +51,16 @@ module.exports = {
 				return;
 			}
 			if (link) {
-				await manager.play(link, false, (reply) => interaction.editReply(reply));
+				await manager.play({
+					url: link,
+					callback: (reply) => interaction.editReply(reply),
+				});
 			}
 			else if (query) {
-				const video = await getYouTubeVideoInfo(query);
-				if (!video) {
-					await interaction.editReply('Song not found.');
-					return;
-				}
-				const song = await createSongFromVideoInfo(video);
-				if (!song) {
-					await interaction.editReply('Song not found.');
-					return;
-				}
-				// TODO: Upgrade to .play()
-				await manager.playSong(song, (reply) => interaction.editReply(reply));
-				return;
+				await manager.play({
+					query,
+					callback: (reply) => interaction.editReply(reply),
+				});
 			}
 			connection.subscribe(manager.player);
 			await manager.on(AudioManagerEvents.ERROR, (error) => {

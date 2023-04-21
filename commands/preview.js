@@ -34,7 +34,11 @@ module.exports = {
 				return;
 			}
 			const link = interaction.options.getString('link');
-			await manager.play(link, true, (reply) => interaction.editReply(reply));
+			await manager.play({
+				url: link,
+				preview: true,
+				callback: (reply) => interaction.editReply(reply),
+			});
 			connection.subscribe(manager.player);
 		}
 		catch (error) {
