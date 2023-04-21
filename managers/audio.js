@@ -107,7 +107,7 @@ class AudioManager extends EventEmitter {
 		if (this.m_repeat_song) {
 			const url = this.m_current_song.url;
 			const options = {};
-			const resource = this._createResource(url, options);
+			const resource = await this._createResource(url, options);
 			await this._playAsync(resource);
 			this.m_start_time = Date.now();
 			return;
