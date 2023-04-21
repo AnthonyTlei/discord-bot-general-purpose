@@ -2,7 +2,14 @@ const { createAudioPlayer, AudioPlayerStatus } = require('@discordjs/voice');
 const { EventEmitter } = require('events');
 const { getLyrics } = require('../utilities/genius.js');
 const Queue = require('../utilities/queue.js');
-const { createResourceFromURL, getYouTubeVideoInfo, createSongFromVideoInfo } = require('../utilities/youtube.js');
+const {
+	createResourceFromURL,
+	getYTVideoInfoFromQuery,
+	createSongFromVideoInfo,
+	getYTVideoInfoFromURL,
+	validateYouTubeUrl,
+	YouTubeLinkType,
+} = require('../utilities/youtube.js');
 const {
 	getSpotifyTrackInfo,
 	getSpotifyTrackId,
@@ -17,6 +24,11 @@ const AudioManagerEvents = {
 	ERROR: 'error',
 };
 
+const Source = {
+	YOUTUBE: 'youtube',
+	SPOTIFY: 'spotify',
+	UNKNOWN: 'unknown',
+};
 class AudioManager extends EventEmitter {
 	constructor() {
 		super();
@@ -97,6 +109,20 @@ class AudioManager extends EventEmitter {
 		return song;
 	}
 
+	_validateSource(url) {
+		const youtubeUrlType = validateYouTubeUrl(url);
+		const spotifyUrlType = validateSpotifyUrl(url);
+		if (youtubeUrlType !== YouTubeLinkType.INVALID) {
+			return Source.YOUTUBE;
+		}
+		else if (spotifyUrlType !== SpotifyLinkType.INVALID) {
+			return Source.SPOTIFY;
+		}
+		else {
+			return Source.UNKNOWN;
+		}
+	}
+
 	async _playAsync(resource) {
 		return new Promise((resolve, reject) => {
 			this._play(resource);
@@ -145,7 +171,7 @@ class AudioManager extends EventEmitter {
 
 	async _youtubeFactory(trackInfo) {
 		const query = trackInfo.name + ' ' + trackInfo.artists[0].name;
-		const video = await getYouTubeVideoInfo(query);
+		const video = await getYTVideoInfoFromQuery(query);
 		const song = await createSongFromVideoInfo(video);
 		return song;
 	}
@@ -189,9 +215,25 @@ class AudioManager extends EventEmitter {
 		return songs;
 	}
 
-	async _getYoutubeSongs(query) {
+	async _getYoutubeSongs({ query = '', url }) {
 		const songs = [];
-		const video = await getYouTubeVideoInfo(query);
+		let video = null;
+		if (url) {
+			const type = validateYouTubeUrl(url);
+			switch (type) {
+			case YouTubeLinkType.VIDEO:
+				video = await getYTVideoInfoFromURL(url);
+				break;
+			case YouTubeLinkType.PLAYLIST:
+				// TODO: Implement Playlist support.
+				throw new Error('Youtube Playlists are yet to be implemented.');
+			case YouTubeLinkType.INVALID:
+				throw new Error('Invalid YouTube link.');
+			}
+		}
+		else if (query) {
+			video = await getYTVideoInfoFromQuery(query);
+		}
 		if (!video) {
 			throw Error('Song not found.');
 		}
@@ -200,11 +242,15 @@ class AudioManager extends EventEmitter {
 		return songs;
 	}
 
-	async play({ url, query = '', preview = false, callback = null, ...otherOptions }) {
+	async play({
+		url,
+		query = '',
+		preview = false,
+		callback = null,
+		...otherOptions
+	}) {
 		let reply = '';
 		let songs = [];
-		console.log(otherOptions);
-		// TODO : verify link source (youtube/spotify) to support both.
 		if (preview) {
 			try {
 				songs = await this._getSpotifySongs(url, this._spotifyFactory);
@@ -220,10 +266,19 @@ class AudioManager extends EventEmitter {
 		else {
 			try {
 				if (url) {
-					songs = await this._getSpotifySongs(url, this._youtubeFactory);
+					const source = this._validateSource(url);
+					if (source === Source.YOUTUBE) {
+						songs = await this._getYoutubeSongs({ url });
+					}
+					else if (source === Source.SPOTIFY) {
+						songs = await this._getSpotifySongs(url, this._youtubeFactory);
+					}
+					else {
+						throw new Error('Invalid URL.');
+					}
 				}
 				else if (query) {
-					songs = await this._getYoutubeSongs(query);
+					songs = await this._getYoutubeSongs({ query });
 				}
 				else {
 					throw new Error('No URL or query provided.');
@@ -348,7 +403,9 @@ class AudioManager extends EventEmitter {
 					reply = 'Song not in queue.';
 				}
 				else {
-					const nextSong = this._getNextSongInfo(this.m_queue.indexOfFirst(songs[0]) + 1);
+					const nextSong = this._getNextSongInfo(
+						this.m_queue.indexOfFirst(songs[0]) + 1,
+					);
 					reply = 'Now playing: ' + nextSong.title;
 					if (callback) {
 						callback(reply);

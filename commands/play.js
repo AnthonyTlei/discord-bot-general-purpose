@@ -1,10 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
 const { AudioManager, AudioManagerEvents } = require('../managers/audio.js');
-const {
-	getYouTubeVideoInfo,
-	createSongFromVideoInfo,
-} = require('../utilities/youtube.js');
 
 const manager = new AudioManager();
 
@@ -22,7 +18,7 @@ module.exports = {
 		.addStringOption((option) =>
 			option
 				.setName('link')
-				.setDescription('The Link of the Spotify track/playlist to play.')
+				.setDescription('The Link of the Spotify/Youtube track/playlist to play.')
 				.setRequired(false)
 				.setMaxLength(2000),
 		),
