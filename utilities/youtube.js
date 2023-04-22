@@ -1,7 +1,7 @@
 const { createAudioResource } = require('@discordjs/voice');
 const { youtubeAPIKey } = require('../config.json');
 const { google } = require('googleapis');
-const { Song, SongType } = require('./song');
+const { SongDTO, SongType, VideoDTO } = require('./dto');
 const { URL } = require('url');
 const ytdl = require('discord-ytdl-core');
 const redisClient = require('./redis');
@@ -74,23 +74,32 @@ const extractYouTubeVideoId = (url) => {
 	}
 };
 
+const createVideoDTO = ({ video }) => {
+	const id = video.id.videoId || video.id;
+	const url = `https://www.youtube.com/watch?v=${id}`;
+	return new VideoDTO({ id, title: video.snippet.title, channel: video.snippet.channelTitle, url });
+};
+
 const getYTVideoInfoFromURL = async (url) => {
 	try {
 		const videoId = extractYouTubeVideoId(url);
 		const result = await redisClient.get(videoId);
 		if (result) {
+			console.log('Reading from cache: ', result);
 			return JSON.parse(result);
 		}
 		const response = await youtube.videos.list({
 			part: 'snippet',
 			id: videoId,
 		});
+		const video = createVideoDTO({ video: response.data.items[0] });
+		console.log('Writing to cache');
 		await redisClient.set(
 			videoId,
-			JSON.stringify(response.data.items[0]),
+			JSON.stringify(video),
 			redisClient.cacheExp,
 		);
-		return response.data.items[0];
+		return video;
 	}
 	catch (error) {
 		console.error('Error getting YouTube video info:', error);
@@ -103,6 +112,7 @@ const getYTVideoInfoFromQuery = async ({ query, songId }) => {
 		if (songId) {
 			const result = await redisClient.get(songId);
 			if (result) {
+				console.log('Reading from cache: ', result);
 				return JSON.parse(result);
 			}
 		}
@@ -112,14 +122,16 @@ const getYTVideoInfoFromQuery = async ({ query, songId }) => {
 			type: 'video',
 			maxResults: 1,
 		});
+		const video = createVideoDTO({ video: response.data.items[0] });
 		if (songId) {
+			console.log('Writing to cache');
 			await redisClient.set(
 				songId,
-				JSON.stringify(response.data.items[0]),
+				JSON.stringify(video),
 				redisClient.cacheExp,
 			);
 		}
-		return response.data.items[0];
+		return video;
 	}
 	catch (error) {
 		console.error('Error getting YouTube video info:', error);
@@ -150,13 +162,13 @@ const createResourceFromURL = async (url, options) => {
 
 const createSongFromVideoInfo = async (video) => {
 	try {
-		const title = video.snippet.title;
-		const artist = video.snippet.channelTitle;
+		const id = video.id;
+		const title = video.title;
+		const artist = video.channel;
 		const type = SongType.YOUTUBE;
-		const id = video.id.videoId || video.id;
 		const url = `https://www.youtube.com/watch?v=${id}`;
 		const resource = await createResourceFromURL(url);
-		return new Song(resource, title, artist, url, type);
+		return new SongDTO(resource, title, artist, url, type);
 	}
 	catch (error) {
 		console.error('Error creating song from YouTube video:', error);
@@ -171,7 +183,7 @@ const createSongFromJSON = async (song) => {
 		const type = song.type || SongType.YOUTUBE;
 		const url = song.url;
 		const resource = await createResourceFromURL(url);
-		return new Song(resource, title, artist, url, type);
+		return new SongDTO(resource, title, artist, url, type);
 	}
 	catch (error) {
 		console.error('Error creating song from YouTube JSON:', error);
@@ -188,4 +200,5 @@ module.exports = {
 	extractYouTubeVideoId,
 	validateYouTubeUrl,
 	YouTubeLinkType,
+	createVideoDTO,
 };

@@ -1,5 +1,6 @@
 const Redis = require('ioredis');
-const cacheExp = 3600 * 24;
+const { formatTime } = require('./clock');
+const cacheExp = 3600 * 24 * 7;
 let client = null;
 
 const initializeRedis = () => {
@@ -35,13 +36,11 @@ async function printCurrentCache() {
 	try {
 		let cursor = '0';
 		const keys = [];
-
 		do {
 			const response = await client.scan(cursor, 'MATCH', '*');
 			cursor = response[0];
 			keys.push(...response[1]);
 		} while (cursor !== '0');
-
 		if (keys.length === 0) {
 			console.log('Cache is empty.');
 			return;
@@ -49,7 +48,10 @@ async function printCurrentCache() {
 		console.log('Current cache:');
 		for (const key of keys) {
 			const value = await client.get(key);
-			console.log(`${key}: ${value}`);
+			const ttl = await client.ttl(key);
+			const formattedTtl = formatTime(ttl);
+			const expiresIn = ttl === -1 ? 'no expiration' : `${formattedTtl} seconds`;
+			console.log(`${key}: ${value} (expires in: ${expiresIn})`);
 		}
 	}
 	catch (error) {

@@ -20,6 +20,7 @@ const {
 	getSpotifyPlaylistInfo,
 	getSpotifyPlaylistId,
 } = require('../utilities/spotify.js');
+
 const AudioManagerEvents = {
 	ERROR: 'error',
 };

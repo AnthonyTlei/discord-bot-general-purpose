@@ -9,7 +9,6 @@ const formatLyrics = (lyrics) => {
 
 const getLyrics = async ({ song, query }) => {
 	let searchUrl = '';
-	console.log('Query:', query);
 	if (query) {
 		searchUrl = `https://api.genius.com/search?q=${encodeURIComponent(
 			query,
@@ -20,7 +19,6 @@ const getLyrics = async ({ song, query }) => {
 			song.artist,
 		)} ${encodeURIComponent(song.title)}&access_token=${geniusAccessToken}`;
 	}
-	console.log('URL:', searchUrl);
 	try {
 		const searchResponse = await axios.get(searchUrl);
 		const searchData = searchResponse.data;

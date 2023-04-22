@@ -1,6 +1,6 @@
 const { createAudioResource } = require('@discordjs/voice');
 const { spotifyClientId, spotifyClientSecret } = require('../config.json');
-const { Song } = require('./song');
+const { SongDTO } = require('./dto');
 const axios = require('axios');
 const credentials = Buffer.from(
 	`${spotifyClientId}:${spotifyClientSecret}`,
@@ -107,7 +107,7 @@ const createSongFromTrackInfo = (trackInfo) => {
 	const type = SpotifyLinkType.SPOTIFY;
 	const url = trackInfo.preview_url;
 	const resource = createAudioResource(trackInfo.preview_url);
-	return new Song(resource, title, artist, url, type);
+	return new SongDTO(resource, title, artist, url, type);
 };
 
 module.exports = {

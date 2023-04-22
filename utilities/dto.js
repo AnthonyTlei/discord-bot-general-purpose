@@ -5,7 +5,7 @@ const SongType = {
 	SPOTIFY: 'spotify',
 };
 
-class Song {
+class SongDTO {
 	constructor(resource, title = null, artist = null, url = null, type = SongType.UNKNOWN) {
 		this.resource = resource;
 		this.title = title;
@@ -15,7 +15,17 @@ class Song {
 	}
 }
 
+class VideoDTO {
+	constructor({ id, title, channel, url }) {
+		this.id = id;
+		this.title = title;
+		this.channel = channel;
+		this.url = url;
+	}
+}
+
 module.exports = {
 	SongType,
-	Song,
+	SongDTO,
+	VideoDTO,
 };
