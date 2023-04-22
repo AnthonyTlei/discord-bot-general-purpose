@@ -1,8 +1,12 @@
 node_modules
 
 commands/private
+
 assets/
 
 .env
 config.json
 playlists.json
+
+cpp/
+Dockerfile
