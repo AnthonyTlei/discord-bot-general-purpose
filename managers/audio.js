@@ -375,7 +375,11 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Paused:
 		case AudioPlayerStatus.Buffering:
 			if (id) {
-				this.skip(id, callback);
+				this.skip(id, (res) => {
+					if (callback) {
+						callback(res);
+					}
+				});
 				return;
 			}
 			if (title) {
