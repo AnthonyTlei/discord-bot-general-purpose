@@ -4,6 +4,7 @@ const { google } = require('googleapis');
 const { Song, SongType } = require('./song');
 const { URL } = require('url');
 const ytdl = require('discord-ytdl-core');
+const redisClient = require('./redis');
 
 const youtube = google.youtube({
 	version: 'v3',
@@ -76,10 +77,19 @@ const extractYouTubeVideoId = (url) => {
 const getYTVideoInfoFromURL = async (url) => {
 	try {
 		const videoId = extractYouTubeVideoId(url);
+		const result = await redisClient.get(videoId);
+		if (result) {
+			return JSON.parse(result);
+		}
 		const response = await youtube.videos.list({
 			part: 'snippet',
 			id: videoId,
 		});
+		await redisClient.set(
+			videoId,
+			JSON.stringify(response.data.items[0]),
+			redisClient.cacheExp,
+		);
 		return response.data.items[0];
 	}
 	catch (error) {
@@ -88,14 +98,27 @@ const getYTVideoInfoFromURL = async (url) => {
 	}
 };
 
-const getYTVideoInfoFromQuery = async (query) => {
+const getYTVideoInfoFromQuery = async ({ query, songId }) => {
 	try {
+		if (songId) {
+			const result = await redisClient.get(songId);
+			if (result) {
+				return JSON.parse(result);
+			}
+		}
 		const response = await youtube.search.list({
 			part: 'snippet',
 			q: query,
 			type: 'video',
 			maxResults: 1,
 		});
+		if (songId) {
+			await redisClient.set(
+				songId,
+				JSON.stringify(response.data.items[0]),
+				redisClient.cacheExp,
+			);
+		}
 		return response.data.items[0];
 	}
 	catch (error) {

@@ -171,7 +171,8 @@ class AudioManager extends EventEmitter {
 
 	async _youtubeFactory(trackInfo) {
 		const query = trackInfo.name + ' ' + trackInfo.artists[0].name;
-		const video = await getYTVideoInfoFromQuery(query);
+		const songId = trackInfo.id;
+		const video = await getYTVideoInfoFromQuery({ query, songId });
 		const song = await createSongFromVideoInfo(video);
 		return song;
 	}
