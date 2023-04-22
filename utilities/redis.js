@@ -21,16 +21,34 @@ const clientSetAsync = async (key, value, expiration) => {
 	await client.set(key, value, 'EX', expiration);
 };
 
+async function clearCache() {
+	try {
+		await client.flushdb();
+		console.log('Cache cleared.');
+	}
+	catch (error) {
+		console.error('Error clearing cache:', error);
+	}
+}
+
 async function printCurrentCache() {
 	try {
-		const keys = await Redis.keys('*');
+		let cursor = '0';
+		const keys = [];
+
+		do {
+			const response = await client.scan(cursor, 'MATCH', '*');
+			cursor = response[0];
+			keys.push(...response[1]);
+		} while (cursor !== '0');
+
 		if (keys.length === 0) {
 			console.log('Cache is empty.');
 			return;
 		}
 		console.log('Current cache:');
 		for (const key of keys) {
-			const value = await Redis.get(key);
+			const value = await client.get(key);
 			console.log(`${key}: ${value}`);
 		}
 	}
@@ -45,4 +63,5 @@ module.exports = {
 	printCurrentCache,
 	cacheExp,
 	initializeRedis,
+	clearCache,
 };
