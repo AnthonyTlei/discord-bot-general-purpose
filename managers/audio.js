@@ -432,7 +432,7 @@ class AudioManager extends EventEmitter {
 		}
 	}
 
-	async lyrics() {
+	async lyrics(query = '') {
 		let reply = '';
 		switch (this.m_player.state.status) {
 		case AudioPlayerStatus.Idle:
@@ -443,7 +443,7 @@ class AudioManager extends EventEmitter {
 		case AudioPlayerStatus.Buffering:
 			if (this.m_current_song) {
 				reply = 'Lyrics for: ' + this.m_current_song.title + '\n\n';
-				reply += await getLyrics(this.m_current_song);
+				reply += await getLyrics({ song: this.m_current_song, query });
 			}
 			else {
 				reply = 'Nothing is playing.';

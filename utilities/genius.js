@@ -7,10 +7,20 @@ const formatLyrics = (lyrics) => {
 	return formattedLyrics;
 };
 
-const getLyrics = async (song) => {
-	const searchUrl = `https://api.genius.com/search?q=${encodeURIComponent(
-		song.artist,
-	)} ${encodeURIComponent(song.title)}&access_token=${geniusAccessToken}`;
+const getLyrics = async ({ song, query }) => {
+	let searchUrl = '';
+	console.log('Query:', query);
+	if (query) {
+		searchUrl = `https://api.genius.com/search?q=${encodeURIComponent(
+			query,
+		)}&access_token=${geniusAccessToken}`;
+	}
+	else {
+		searchUrl = `https://api.genius.com/search?q=${encodeURIComponent(
+			song.artist,
+		)} ${encodeURIComponent(song.title)}&access_token=${geniusAccessToken}`;
+	}
+	console.log('URL:', searchUrl);
 	try {
 		const searchResponse = await axios.get(searchUrl);
 		const searchData = searchResponse.data;
