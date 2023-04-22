@@ -1,10 +1,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
-require('./utilities/redis.js');
 
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
 const { startClock } = require('./utilities/clock');
+const { initializeRedis } = require('./utilities/redis.js');
 
 let deployTargets = process.argv.slice(2);
 if (deployTargets.length === 0) {
@@ -96,3 +96,4 @@ for (const file of eventFiles) {
 
 client.login(token);
 startClock();
+initializeRedis();

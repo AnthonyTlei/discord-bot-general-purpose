@@ -1,14 +1,17 @@
 const Redis = require('ioredis');
-const client = new Redis({ host: 'localhost', port: 6379 });
 const cacheExp = 3600 * 24;
+let client = null;
 
-client.on('connect', () => {
-	console.log('\nConnected to Redis\n');
-});
+const initializeRedis = () => {
+	client = new Redis({ host: 'localhost', port: 6379 });
+	client.on('connect', () => {
+		console.log('\nConnected to Redis\n');
+	});
 
-client.on('error', (err) => {
-	console.error('Error connecting to Redis:', err);
-});
+	client.on('error', (err) => {
+		console.error('Error connecting to Redis:', err);
+	});
+};
 
 const clientGetAsync = async (key) => {
 	return await client.get(key);
@@ -41,4 +44,5 @@ module.exports = {
 	set: clientSetAsync,
 	printCurrentCache,
 	cacheExp,
+	initializeRedis,
 };
