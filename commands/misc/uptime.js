@@ -8,6 +8,6 @@ module.exports = {
 	async execute(interaction) {
 		const uptime = getUptime();
 		const result = formatTime(uptime);
-		await interaction.reply(`System has been awake for ${result} hours.`);
+		await interaction.reply(`System has been awake for ${result}s.`);
 	},
 };
