@@ -233,7 +233,7 @@ class AudioManager extends EventEmitter {
 			}
 		}
 		else if (query) {
-			video = await getYTVideoInfoFromQuery(query);
+			video = await getYTVideoInfoFromQuery({ query });
 		}
 		if (!video) {
 			throw Error('Song not found.');
@@ -248,6 +248,7 @@ class AudioManager extends EventEmitter {
 		query = '',
 		preview = false,
 		callback = null,
+		// eslint-disable-next-line no-unused-vars
 		...otherOptions
 	}) {
 		let reply = '';
