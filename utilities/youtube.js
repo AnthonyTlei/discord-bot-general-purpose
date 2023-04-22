@@ -83,7 +83,7 @@ const createVideoDTO = ({ video }) => {
 const getYTVideoInfoFromURL = async (url) => {
 	try {
 		const videoId = extractYouTubeVideoId(url);
-		const result = await redisClient.get(videoId);
+		const result = await redisClient.get(`youtubeID::${videoId}`);
 		if (result) {
 			console.log('Reading from cache: ', result);
 			return JSON.parse(result);
@@ -95,7 +95,7 @@ const getYTVideoInfoFromURL = async (url) => {
 		const video = createVideoDTO({ video: response.data.items[0] });
 		console.log('Writing to cache');
 		await redisClient.set(
-			videoId,
+			`youtubeID::${videoId}`,
 			JSON.stringify(video),
 			redisClient.cacheExp,
 		);
@@ -110,7 +110,7 @@ const getYTVideoInfoFromURL = async (url) => {
 const getYTVideoInfoFromQuery = async ({ query, songId }) => {
 	try {
 		if (songId) {
-			const result = await redisClient.get(songId);
+			const result = await redisClient.get(`spotifyID::${songId}`);
 			if (result) {
 				console.log('Reading from cache: ', result);
 				return JSON.parse(result);
@@ -126,7 +126,7 @@ const getYTVideoInfoFromQuery = async ({ query, songId }) => {
 		if (songId) {
 			console.log('Writing to cache');
 			await redisClient.set(
-				songId,
+				`spotifyID::${songId}`,
 				JSON.stringify(video),
 				redisClient.cacheExp,
 			);
