@@ -47,7 +47,7 @@ module.exports = {
 			validateCppFile(file);
 			const command = `
 			 docker build -t cpp_compiler . &&
-			 docker run -v "${tempDir}:/app" cpp_compiler /bin/bash -c "g++ ${file.name} -o output && ./output"
+			 docker run --rm -v "${tempDir}:/app" cpp_compiler /bin/bash -c "g++ ${file.name} -o output && ./output"
 		   `;
 			const { stdout, stderr } = await executeCommand(command, {
 				cwd: path.join(__dirname, '../..'),
